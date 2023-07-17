@@ -32,6 +32,8 @@ data Token
   | GreaterThanOrEqual
   | LessThanOrEqual
   | NotEqual
+  | And
+  | Or
   | Keyword Keyword
   | Literal Literal
   | Error String
@@ -80,7 +82,9 @@ loxMultiCharTokens =
     [ ('!', lexBang),
       ('/', lexSlash),
       ('<', lexLessThan),
-      ('>', lexGreaterThan)
+      ('>', lexGreaterThan),
+      ('&', lexAnd),
+      ('|', lexOr)
     ]
 
 type Lexer = [String] -> Either String [Token]
@@ -114,6 +118,18 @@ lexMultiCharToken string =
       | isDigit char = lexIntegerLiteral string
       | isAlphaNum char = lexIdentifiersAndKeywords string
       | otherwise = [Error "Invalid token."]
+
+lexAnd :: LexRow
+lexAnd [] = undefined
+lexAnd (x : xs)
+  | x == '&' = And : lexRow xs
+  | otherwise = [Error "Invalid token."]
+
+lexOr :: LexRow
+lexOr [] = undefined
+lexOr (x : xs)
+  | x == '|' = Or : lexRow xs
+  | otherwise = [Error "Invalid token."]
 
 lexBang :: LexRow
 lexBang [] = undefined

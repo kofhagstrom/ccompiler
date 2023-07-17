@@ -13,30 +13,30 @@ import Data.Char (isAlphaNum, isDigit)
 import Data.Map (Map, fromList, lookup)
 
 data Token
-  = Space
-  | OpenBrace
-  | CloseBrace
-  | OpenParenthesis
-  | CloseParenthesis
-  | SemiColon
-  | Plus
-  | Asterisk
-  | Division
-  | Minus
-  | Bang
-  | Tilde
-  | Equality
-  | Inequality
-  | LessThan
-  | GreaterThan
-  | GreaterThanOrEqual
-  | LessThanOrEqual
-  | NotEqual
-  | And
-  | Or
-  | Keyword Keyword
-  | Literal Literal
-  | Error String
+  = SpaceT
+  | OpenBraceT
+  | CloseBraceT
+  | OpenParenthesisT
+  | CloseParenthesisT
+  | SemiColonT
+  | PlusT
+  | AsteriskT
+  | DivisionT
+  | MinusT
+  | BangT
+  | TildeT
+  | LogicalEqualityT
+  | InequalityT
+  | LessThanT
+  | GreaterThanT
+  | GreaterThanOrEqualT
+  | LessThanOrEqualT
+  | NotEqualT
+  | AndT
+  | OrT
+  | KeywordT Keyword
+  | LiteralT Literal
+  | ErrorT String
   deriving (Show, Eq)
 
 data Keyword
@@ -61,19 +61,18 @@ keywords =
 singleCharTokens :: Map Char Token
 singleCharTokens =
   fromList
-    [ (' ', Space),
-      ('(', OpenParenthesis),
-      (')', CloseParenthesis),
-      ('{', OpenBrace),
-      ('}', CloseBrace),
-      (';', SemiColon),
-      ('-', Minus),
-      ('!', Bang),
-      ('~', Tilde),
-      ('+', Plus),
-      ('*', Asterisk),
-      ('/', Division),
-      ('=', Equality)
+    [ (' ', SpaceT),
+      ('(', OpenParenthesisT),
+      (')', CloseParenthesisT),
+      ('{', OpenBraceT),
+      ('}', CloseBraceT),
+      (';', SemiColonT),
+      ('-', MinusT),
+      ('!', BangT),
+      ('~', TildeT),
+      ('+', PlusT),
+      ('*', AsteriskT),
+      ('/', DivisionT)
     ]
 
 loxMultiCharTokens :: Map Char LexRow
@@ -84,7 +83,8 @@ loxMultiCharTokens =
       ('<', lexLessThan),
       ('>', lexGreaterThan),
       ('&', lexAnd),
-      ('|', lexOr)
+      ('|', lexOr),
+      ('=', lexLogicalEquality)
     ]
 
 type Lexer = [String] -> Either String [Token]
@@ -98,7 +98,7 @@ lexRow string =
     then []
     else case token of
       Just tok ->
-        if tok == Space
+        if tok == SpaceT
           then lexRow rest
           else tok : lexRow rest
       Nothing -> lexMultiCharToken string
@@ -117,54 +117,60 @@ lexMultiCharToken string =
     lexRest
       | isDigit char = lexIntegerLiteral string
       | isAlphaNum char = lexIdentifiersAndKeywords string
-      | otherwise = [Error "Invalid token."]
+      | otherwise = [ErrorT "Invalid token."]
 
 lexAnd :: LexRow
 lexAnd [] = undefined
 lexAnd (x : xs)
-  | x == '&' = And : lexRow xs
-  | otherwise = [Error "Invalid token."]
+  | x == '&' = AndT : lexRow xs
+  | otherwise = [ErrorT "Invalid token."]
+
+lexLogicalEquality :: LexRow
+lexLogicalEquality [] = undefined
+lexLogicalEquality (x : xs)
+  | x == '=' = LogicalEqualityT : lexRow xs
+  | otherwise = [ErrorT "Invalid token."]
 
 lexOr :: LexRow
 lexOr [] = undefined
 lexOr (x : xs)
-  | x == '|' = Or : lexRow xs
-  | otherwise = [Error "Invalid token."]
+  | x == '|' = OrT : lexRow xs
+  | otherwise = [ErrorT "Invalid token."]
 
 lexBang :: LexRow
 lexBang [] = undefined
 lexBang (x : xs)
-  | x == '=' = NotEqual : lexRow xs
-  | otherwise = Bang : lexRow xs
+  | x == '=' = NotEqualT : lexRow xs
+  | otherwise = BangT : lexRow xs
 
 lexSlash :: LexRow
 lexSlash [] = undefined
 lexSlash string@(x : _)
   | x == '/' = []
-  | otherwise = Division : lexRow string
+  | otherwise = DivisionT : lexRow string
 
 lexGreaterThan :: LexRow
 lexGreaterThan [] = undefined
 lexGreaterThan string@(x : xs)
-  | x == '=' = GreaterThanOrEqual : lexRow xs
-  | otherwise = GreaterThan : lexRow string
+  | x == '=' = GreaterThanOrEqualT : lexRow xs
+  | otherwise = GreaterThanT : lexRow string
 
 lexLessThan :: LexRow
 lexLessThan [] = undefined
 lexLessThan string@(x : xs)
-  | x == '=' = LessThanOrEqual : lexRow xs
-  | otherwise = LessThan : lexRow string
+  | x == '=' = LessThanOrEqualT : lexRow xs
+  | otherwise = LessThanT : lexRow string
 
 lexIntegerLiteral :: LexRow
-lexIntegerLiteral string = (Literal . IntL . read) prefix : lexRow suffix
+lexIntegerLiteral string = (LiteralT . IntL . read) prefix : lexRow suffix
   where
     (prefix, suffix) = span isAlphaNum string
 
 lexIdentifiersAndKeywords :: LexRow
 lexIdentifiersAndKeywords string =
   case keyword of
-    Just kw -> Keyword kw : lexRow suffix
-    Nothing -> Literal (IdentifierL prefix) : lexRow suffix
+    Just kw -> KeywordT kw : lexRow suffix
+    Nothing -> LiteralT (IdentifierL prefix) : lexRow suffix
   where
     keyword = Data.Map.lookup prefix keywords
     (prefix, suffix) = span isAlphaNum string
@@ -180,5 +186,5 @@ checkRow (_, []) = []
 checkRow (n, t : ts) =
   let rest = (n, ts)
    in case t of
-        Error err -> Left ("Error on line " <> show n <> ": " ++ err) : checkRow rest
+        ErrorT err -> Left ("Error on line " <> show n <> ": " ++ err) : checkRow rest
         _ -> Right t : checkRow rest

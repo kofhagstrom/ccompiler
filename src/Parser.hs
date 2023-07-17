@@ -7,7 +7,11 @@ module Parser
   )
 where
 
-import Lexer (Keyword (..), Literal (..), Token (..))
+import Lexer
+  ( Keyword (..),
+    Literal (..),
+    Token (..),
+  )
 
 data Operator
   = Addition
@@ -17,6 +21,14 @@ data Operator
   | Division
   | LogicalNegation
   | BitwiseComplement
+  | LessThan
+  | GreaterThan
+  | LessThanOrEqual
+  | GreaterThanOrEqual
+  | Equality
+  | Inequality
+  | LogicalAnd
+  | LogicalOr
   deriving (Show, Eq)
 
 data Expression
@@ -25,11 +37,11 @@ data Expression
   | BinOp Operator Expression Expression
   deriving (Show, Eq)
 
-data Statement = Return Expression deriving (Show, Eq)
+newtype Statement = Return Expression deriving (Show, Eq)
 
 data FuncDeclaration = Fun String Statement deriving (Show, Eq)
 
-data Program = Program FuncDeclaration deriving (Show, Eq)
+newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
 type Parser = [Token] -> Program
 
@@ -38,21 +50,25 @@ parseAST tokens = Program (parseFuncDeclaration tokens)
 
 parseFuncDeclaration :: [Token] -> FuncDeclaration
 parseFuncDeclaration
-  ( Literal (IdentifierL _)
-      : Literal (IdentifierL funcName)
-      : OpenParenthesis
-      : CloseParenthesis
-      : OpenBrace
+  ( LiteralT (IdentifierL _)
+      : LiteralT (IdentifierL funcName)
+      : OpenParenthesisT
+      : CloseParenthesisT
+      : OpenBraceT
       : tokens
-    ) = Parser.Fun funcName (parseStatement tokens)
+    ) = Fun funcName (parseStatement tokens)
 parseFuncDeclaration _ = error "Invalid function declaration"
 
 parseStatement :: [Token] -> Statement
-parseStatement (Keyword Lexer.Return : tokens) = Parser.Return (parseExpression tokens)
+parseStatement (KeywordT Lexer.Return : tokens) = Parser.Return (parseExpression tokens)
 parseStatement _ = error "Invalid statement"
 
 parseExpression :: [Token] -> Expression
--- Expression ::= Expression BinOp Expression | Term
+-- Expression ::= LogicalAndExp { "||" LogicalAndExp }
+-- LogicalAndExp :== EqualityExp { "&&" EqualityExp }
+-- EqualityExp :== RelationalExp { ("!=" | "==") RelationalExp }
+-- RelationalExp :== AdditiveExp { ("<" | ">" | "<=" | ">=") AdditiveExp }
+-- AdditiveExp :== Term { ("+" | "-") Term }
 -- To parse an expression, we first parse a term.
 parseExpression tokens =
   parseExpressionInternal term rest
@@ -61,16 +77,16 @@ parseExpression tokens =
     (term, rest) = parseTerm tokens
     -- Then we parse addition or subtraction by combining this term
     -- with the next term (if any).
-    parseExpressionInternal expr (Lexer.Plus : tokens) =
-      parseExpressionInternal (BinOp Parser.Addition expr nextTerm) tokensAfterNextTerm
+    parseExpressionInternal expr (PlusT : tokens) =
+      parseExpressionInternal (BinOp Addition expr nextTerm) tokensAfterNextTerm
       where
         (nextTerm, tokensAfterNextTerm) = parseTerm tokens
-    parseExpressionInternal expr (Lexer.Minus : tokens) =
-      parseExpressionInternal (BinOp Parser.Subtraction expr nextTerm2) tokensAfterNextTerm2
+    parseExpressionInternal expr (MinusT : tokens) =
+      parseExpressionInternal (BinOp Subtraction expr nextTerm2) tokensAfterNextTerm2
       where
         (nextTerm2, tokensAfterNextTerm2) = parseTerm tokens
     -- If we see a semicolon, we stop parsing the expression.
-    parseExpressionInternal expr (Lexer.SemiColon : _) = expr
+    parseExpressionInternal expr (SemiColonT : _) = expr
     parseExpressionInternal _ _ = error "Invalid syntax in expression"
 
 parseTerm :: [Token] -> (Expression, [Token])
@@ -83,23 +99,27 @@ parseTerm tokens =
     (factor, rest) = parseFactor tokens
     -- Then, if we see a multiplication or division operator,
     -- we parse another term and combine the two terms into a single expression.
-    parseTermInternal expr (Lexer.Asterisk : tokens) =
-      parseTermInternal (BinOp Parser.Multiplication expr nextFactor) tokensAfterNextFactor
+    parseTermInternal expr (AsteriskT : tokens) =
+      parseTermInternal (BinOp Multiplication expr nextFactor1) tokensAfterNextFactor1
       where
-        (nextFactor, tokensAfterNextFactor) = parseFactor tokens
+        (nextFactor1, tokensAfterNextFactor1) = parseFactor tokens
+    parseTermInternal expr (DivisionT : tokens) =
+      parseTermInternal (BinOp Division expr nextFactor2) tokensAfterNextFactor2
+      where
+        (nextFactor2, tokensAfterNextFactor2) = parseFactor tokens
     parseTermInternal expr tokens = (expr, tokens)
 
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
 -- To parse a factor, we simply match the first token against
 -- integer literals, ! and ~.
-parseFactor (Literal (IntL value) : tokens) = (Constant value, tokens)
-parseFactor (Lexer.Bang : tokens) =
-  (UnOp Parser.LogicalNegation expr, rest)
+parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
+parseFactor (BangT : tokens) =
+  (UnOp LogicalNegation expr, rest)
   where
     (expr, rest) = parseFactor tokens
-parseFactor (Lexer.Tilde : tokens) =
-  (UnOp Parser.BitwiseComplement expr, rest)
+parseFactor (TildeT : tokens) =
+  (UnOp BitwiseComplement expr, rest)
   where
     (expr, rest) = parseFactor tokens
 parseFactor _ = error "Invalid syntax in factor"

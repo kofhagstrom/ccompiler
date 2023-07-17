@@ -57,8 +57,9 @@ parseExpression :: [Token] -> Expression
 parseExpression tokens =
   parseExpressionInternal term rest
   where
+    -- (Parsing a term)
     (term, rest) = parseTerm tokens
-    -- Then we parse addition and subtraction by combining this term
+    -- Then we parse addition or subtraction by combining this term
     -- with the next term (if any).
     parseExpressionInternal expr (Lexer.Plus : tokens) =
       parseExpressionInternal (BinOp Parser.Addition expr nextTerm) tokensAfterNextTerm
@@ -78,6 +79,7 @@ parseTerm :: [Token] -> (Expression, [Token])
 parseTerm tokens =
   parseTermInternal factor rest
   where
+    -- (Parsing a factor)
     (factor, rest) = parseFactor tokens
     -- Then, if we see a multiplication or division operator,
     -- we parse another term and combine the two terms into a single expression.

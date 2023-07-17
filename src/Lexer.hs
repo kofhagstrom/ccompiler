@@ -25,6 +25,13 @@ data Token
   | Minus
   | Bang
   | Tilde
+  | Equality
+  | Inequality
+  | LessThan
+  | GreaterThan
+  | GreaterThanOrEqual
+  | LessThanOrEqual
+  | NotEqual
   | Keyword Keyword
   | Literal Literal
   | Error String
@@ -63,13 +70,17 @@ singleCharTokens =
       ('~', Tilde),
       ('+', Plus),
       ('*', Asterisk),
-      ('/', Division)
+      ('/', Division),
+      ('=', Equality)
     ]
 
 loxMultiCharTokens :: Map Char LexRow
 loxMultiCharTokens =
   fromList
-    [ ('/', lexSlash)
+    [ ('!', lexBang),
+      ('/', lexSlash),
+      ('<', lexLessThan),
+      ('>', lexGreaterThan)
     ]
 
 type Lexer = [String] -> Either String [Token]
@@ -104,11 +115,29 @@ lexMultiCharToken string =
       | isAlphaNum char = lexIdentifiersAndKeywords string
       | otherwise = [Error "Invalid token."]
 
+lexBang :: LexRow
+lexBang [] = undefined
+lexBang (x : xs)
+  | x == '=' = NotEqual : lexRow xs
+  | otherwise = Bang : lexRow xs
+
 lexSlash :: LexRow
 lexSlash [] = undefined
 lexSlash string@(x : _)
   | x == '/' = []
   | otherwise = Division : lexRow string
+
+lexGreaterThan :: LexRow
+lexGreaterThan [] = undefined
+lexGreaterThan string@(x : xs)
+  | x == '=' = GreaterThanOrEqual : lexRow xs
+  | otherwise = GreaterThan : lexRow string
+
+lexLessThan :: LexRow
+lexLessThan [] = undefined
+lexLessThan string@(x : xs)
+  | x == '=' = LessThanOrEqual : lexRow xs
+  | otherwise = LessThan : lexRow string
 
 lexIntegerLiteral :: LexRow
 lexIntegerLiteral string = (Literal . IntL . read) prefix : lexRow suffix

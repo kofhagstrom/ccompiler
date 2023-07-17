@@ -12,7 +12,7 @@ run :: String -> IO ()
 run string =
   case lexing of
     Left err -> print err
-    Right tokens -> print $ (parseAST tokens)
+    Right tokens -> print $ (tokens)
   where
     -- putStr $ generateAssembly (parseAST tokens)
 

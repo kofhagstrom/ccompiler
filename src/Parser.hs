@@ -52,38 +52,45 @@ parseStatement (Keyword Lexer.Return : tokens) = Parser.Return (parseExpression 
 parseStatement _ = error "Invalid statement"
 
 parseExpression :: [Token] -> Expression
+-- Expression ::= Expression BinOp Expression | Term
+-- To parse an expression, we first parse a term.
 parseExpression tokens =
-  parseExpression' term rest
+  parseExpressionInternal term rest
   where
     (term, rest) = parseTerm tokens
-
-parseExpression' :: Expression -> [Token] -> Expression
-parseExpression' expr (Lexer.Plus : tokens) =
-  parseExpression' (BinOp Parser.Addition expr term) rest
-  where
-    (term, rest) = parseTerm tokens
-parseExpression' expr (Lexer.Minus : tokens) =
-  parseExpression' (BinOp Parser.Subtraction expr term) rest
-  where
-    (term, rest) = parseTerm tokens
-parseExpression' expr (Lexer.SemiColon : _) = expr
-parseExpression' expr [] = expr
-parseExpression' _ _ = error "Invalid syntax in expression"
+    -- Then we parse addition and subtraction by combining this term
+    -- with the next term (if any).
+    parseExpressionInternal expr (Lexer.Plus : tokens) =
+      parseExpressionInternal (BinOp Parser.Addition expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseTerm tokens
+    parseExpressionInternal expr (Lexer.Minus : tokens) =
+      parseExpressionInternal (BinOp Parser.Subtraction expr nextTerm2) tokensAfterNextTerm2
+      where
+        (nextTerm2, tokensAfterNextTerm2) = parseTerm tokens
+    -- If we see a semicolon, we stop parsing the expression.
+    parseExpressionInternal expr (Lexer.SemiColon : _) = expr
+    parseExpressionInternal _ _ = error "Invalid syntax in expression"
 
 parseTerm :: [Token] -> (Expression, [Token])
+-- Term ::= Term ( "*" | "/" ) Term | Factor
+-- To parse a term, we first parse a factor.
 parseTerm tokens =
-  parseTerm' factor rest
+  parseTermInternal factor rest
   where
     (factor, rest) = parseFactor tokens
-
-parseTerm' :: Expression -> [Token] -> (Expression, [Token])
-parseTerm' expr (Lexer.Asterisk : tokens) =
-  parseTerm' (BinOp Parser.Multiplication expr factor) rest
-  where
-    (factor, rest) = parseFactor tokens
-parseTerm' expr tokens = (expr, tokens)
+    -- Then, if we see a multiplication or division operator,
+    -- we parse another term and combine the two terms into a single expression.
+    parseTermInternal expr (Lexer.Asterisk : tokens) =
+      parseTermInternal (BinOp Parser.Multiplication expr nextFactor) tokensAfterNextFactor
+      where
+        (nextFactor, tokensAfterNextFactor) = parseFactor tokens
+    parseTermInternal expr tokens = (expr, tokens)
 
 parseFactor :: [Token] -> (Expression, [Token])
+-- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
+-- To parse a factor, we simply match the first token against
+-- integer literals, ! and ~.
 parseFactor (Literal (IntL value) : tokens) = (Constant value, tokens)
 parseFactor (Lexer.Bang : tokens) =
   (UnOp Parser.LogicalNegation expr, rest)

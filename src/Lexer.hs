@@ -34,6 +34,7 @@ data Token
   | NotEqualT
   | AndT
   | OrT
+  | AssignmentT
   | KeywordT Keyword
   | LiteralT Literal
   | ErrorT String
@@ -55,7 +56,8 @@ type LexRow = String -> [Token]
 keywords :: Map String Keyword
 keywords =
   fromList
-    [ ("return", ReturnKW)
+    [ ("return", ReturnKW),
+      ("int", IntKW)
     ]
 
 singleCharTokens :: Map Char Token
@@ -127,9 +129,9 @@ lexAnd (x : xs)
 
 lexLogicalEquality :: LexRow
 lexLogicalEquality [] = undefined
-lexLogicalEquality (x : xs)
+lexLogicalEquality chars@(x : xs)
   | x == '=' = LogicalEqualityT : lexRow xs
-  | otherwise = [ErrorT "Invalid token."]
+  | otherwise = AssignmentT : lexRow chars
 
 lexOr :: LexRow
 lexOr [] = undefined

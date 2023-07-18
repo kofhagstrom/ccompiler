@@ -37,7 +37,10 @@ data Expression
   | BinOp Operator Expression Expression
   deriving (Show, Eq)
 
-newtype Statement = Return Expression deriving (Show, Eq)
+data Statement
+  = Return Expression
+  | Int String Expression
+  deriving (Show, Eq)
 
 data FuncDeclaration = Fun String Statement deriving (Show, Eq)
 
@@ -50,7 +53,7 @@ parseAST tokens = Program (parseFuncDeclaration tokens)
 
 parseFuncDeclaration :: [Token] -> FuncDeclaration
 parseFuncDeclaration
-  ( LiteralT (IdentifierL _)
+  ( _
       : LiteralT (IdentifierL funcName)
       : OpenParenthesisT
       : CloseParenthesisT
@@ -60,7 +63,17 @@ parseFuncDeclaration
 parseFuncDeclaration _ = error "Invalid function declaration"
 
 parseStatement :: [Token] -> Statement
-parseStatement (KeywordT ReturnKW : tokens) = Return (parseExpression tokens)
+parseStatement
+  ( KeywordT ReturnKW
+      : tokens
+    ) = Return (parseExpression tokens)
+parseStatement
+  ( KeywordT IntKW
+      : LiteralT (IdentifierL identifier)
+      : AssignmentT
+      : tokens
+    ) =
+    Int identifier (parseExpression tokens)
 parseStatement _ = error "Invalid statement"
 
 parseExpression :: [Token] -> Expression

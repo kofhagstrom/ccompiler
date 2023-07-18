@@ -65,40 +65,91 @@ parseStatement _ = error "Invalid statement"
 
 parseExpression :: [Token] -> Expression
 -- Expression ::= LogicalAndExp { "||" LogicalAndExp }
--- LogicalAndExp :== EqualityExp { "&&" EqualityExp }
--- EqualityExp :== RelationalExp { ("!=" | "==") RelationalExp }
--- RelationalExp :== AdditiveExp { ("<" | ">" | "<=" | ">=") AdditiveExp }
--- AdditiveExp :== Term { ("+" | "-") Term }
--- To parse an expression, we first parse a term.
 parseExpression tokens =
   parseExpressionInternal term rest
   where
-    -- (Parsing a term)
-    (term, rest) = parseTerm tokens
-    -- Then we parse addition or subtraction by combining this term
-    -- with the next term (if any).
-    parseExpressionInternal expr (PlusT : tokens) =
-      parseExpressionInternal (BinOp Addition expr nextTerm) tokensAfterNextTerm
+    (term, rest) = parseLogicalAndExp tokens
+    parseExpressionInternal expr (OrT : tokens) =
+      parseExpressionInternal (BinOp LogicalOr expr nextTerm) tokensAfterNextTerm
       where
-        (nextTerm, tokensAfterNextTerm) = parseTerm tokens
-    parseExpressionInternal expr (MinusT : tokens) =
-      parseExpressionInternal (BinOp Subtraction expr nextTerm2) tokensAfterNextTerm2
-      where
-        (nextTerm2, tokensAfterNextTerm2) = parseTerm tokens
-    -- If we see a semicolon, we stop parsing the expression.
+        (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
     parseExpressionInternal expr (SemiColonT : _) = expr
     parseExpressionInternal _ _ = error "Invalid syntax in expression"
 
+parseLogicalAndExp :: [Token] -> (Expression, [Token])
+-- LogicalAndExp :== EqualityExp { "&&" EqualityExp }
+parseLogicalAndExp tokens =
+  parseLogicalAndExpInternal term rest
+  where
+    (term, rest) = parseEqualityExp tokens
+    parseLogicalAndExpInternal expr (AndT : tokens) =
+      parseLogicalAndExpInternal (BinOp LogicalAnd expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseEqualityExp tokens
+    parseLogicalAndExpInternal expr tokens = (expr, tokens)
+
+parseEqualityExp :: [Token] -> (Expression, [Token])
+-- EqualityExp :== RelationalExp { ("!=" | "==") RelationalExp }
+parseEqualityExp tokens =
+  parseEqualityExpInternal term rest
+  where
+    (term, rest) = parseRelationalExp tokens
+    parseEqualityExpInternal expr (LogicalEqualityT : tokens) =
+      parseEqualityExpInternal (BinOp Equality expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseRelationalExp tokens
+    parseEqualityExpInternal expr (InequalityT : tokens) =
+      parseEqualityExpInternal (BinOp Inequality expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseRelationalExp tokens
+    parseEqualityExpInternal expr tokens = (expr, tokens)
+
+parseRelationalExp :: [Token] -> (Expression, [Token])
+-- RelationalExp :== AdditiveExp { ("<" | ">" | "<=" | ">=") AdditiveExp }
+parseRelationalExp tokens =
+  parseRelationalExpInternal term rest
+  where
+    (term, rest) = parseAdditiveExp tokens
+    parseRelationalExpInternal expr (LessThanT : tokens) =
+      parseRelationalExpInternal (BinOp LessThan expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
+    parseRelationalExpInternal expr (GreaterThanT : tokens) =
+      parseRelationalExpInternal (BinOp GreaterThan expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
+    parseRelationalExpInternal expr (LessThanOrEqualT : tokens) =
+      parseRelationalExpInternal (BinOp LessThanOrEqual expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
+    parseRelationalExpInternal expr (GreaterThanOrEqualT : tokens) =
+      parseRelationalExpInternal (BinOp GreaterThanOrEqual expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
+    parseRelationalExpInternal expr tokens = (expr, tokens)
+
+parseAdditiveExp :: [Token] -> (Expression, [Token])
+-- AdditiveExp :== Term { ("+" | "-") Term }
+parseAdditiveExp tokens =
+  parseAdditiveExpInternal term rest
+  where
+    (term, rest) = parseTerm tokens
+    parseAdditiveExpInternal expr (PlusT : tokens) =
+      parseAdditiveExpInternal (BinOp Addition expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseTerm tokens
+    parseAdditiveExpInternal expr (MinusT : tokens) =
+      parseAdditiveExpInternal (BinOp Subtraction expr nextTerm) tokensAfterNextTerm
+      where
+        (nextTerm, tokensAfterNextTerm) = parseTerm tokens
+    parseAdditiveExpInternal expr tokens = (expr, tokens)
+
 parseTerm :: [Token] -> (Expression, [Token])
 -- Term ::= Term ( "*" | "/" ) Term | Factor
--- To parse a term, we first parse a factor.
 parseTerm tokens =
   parseTermInternal factor rest
   where
-    -- (Parsing a factor)
     (factor, rest) = parseFactor tokens
-    -- Then, if we see a multiplication or division operator,
-    -- we parse another term and combine the two terms into a single expression.
     parseTermInternal expr (AsteriskT : tokens) =
       parseTermInternal (BinOp Multiplication expr nextFactor1) tokensAfterNextFactor1
       where
@@ -111,8 +162,6 @@ parseTerm tokens =
 
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
--- To parse a factor, we simply match the first token against
--- integer literals, ! and ~.
 parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
 parseFactor (BangT : tokens) =
   (UnOp LogicalNegation expr, rest)

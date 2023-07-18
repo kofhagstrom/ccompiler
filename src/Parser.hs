@@ -166,12 +166,10 @@ parseTermInternal _ [] = error "Invalid syntax in term"
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
 parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
-parseFactor (BangT : tokens) =
-  (UnOp LogicalNegation expr, rest)
-  where
-    (expr, rest) = parseFactor tokens
-parseFactor (TildeT : tokens) =
-  (UnOp BitwiseComplement expr, rest)
-  where
-    (expr, rest) = parseFactor tokens
+parseFactor (t : ts) =
+  let (expr, rest) = parseFactor ts
+   in case t of
+        BangT -> (UnOp LogicalNegation expr, rest)
+        TildeT -> (UnOp BitwiseComplement expr, rest)
+        _ -> error "Invalid syntax in factor"
 parseFactor _ = error "Invalid syntax in factor"

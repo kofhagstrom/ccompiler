@@ -86,11 +86,12 @@ parseLogicalAndExp tokens =
     (term, rest) = parseEqualityExp tokens
 
 parseLogicalAndExpInternal :: Expression -> [Token] -> (Expression, [Token])
-parseLogicalAndExpInternal expr (AndT : tokens) =
-  parseLogicalAndExpInternal (BinOp LogicalAnd expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseEqualityExp tokens
-parseLogicalAndExpInternal expr tokens = (expr, tokens)
+parseLogicalAndExpInternal expr tokens@(t : ts) =
+  let (nextFactor, tokensAfterNextFactor) = parseEqualityExp ts
+   in case t of
+        AndT -> parseLogicalAndExpInternal (BinOp LogicalAnd expr nextFactor) tokensAfterNextFactor
+        _ -> (expr, tokens)
+parseLogicalAndExpInternal _ [] = error "Invalid syntax in logical and expression"
 
 parseEqualityExp :: [Token] -> (Expression, [Token])
 -- EqualityExp :== RelationalExp { ("!=" | "==") RelationalExp }
@@ -100,15 +101,13 @@ parseEqualityExp tokens =
     (term, rest) = parseRelationalExp tokens
 
 parseEqualityExpInternal :: Expression -> [Token] -> (Expression, [Token])
-parseEqualityExpInternal expr (LogicalEqualityT : tokens) =
-  parseEqualityExpInternal (BinOp Equality expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseRelationalExp tokens
-parseEqualityExpInternal expr (InequalityT : tokens) =
-  parseEqualityExpInternal (BinOp Inequality expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseRelationalExp tokens
-parseEqualityExpInternal expr tokens = (expr, tokens)
+parseEqualityExpInternal expr tokens@(t : ts) =
+  let (nextFactor, tokensAfterNextFactor) = parseRelationalExp ts
+   in case t of
+        LogicalEqualityT -> parseEqualityExpInternal (BinOp Equality expr nextFactor) tokensAfterNextFactor
+        InequalityT -> parseEqualityExpInternal (BinOp Inequality expr nextFactor) tokensAfterNextFactor
+        _ -> (expr, tokens)
+parseEqualityExpInternal _ [] = error "Invalid syntax in equality expression"
 
 parseRelationalExp :: [Token] -> (Expression, [Token])
 -- RelationalExp :== AdditiveExp { ("<" | ">" | "<=" | ">=") AdditiveExp }
@@ -118,23 +117,18 @@ parseRelationalExp tokens =
     (term, rest) = parseAdditiveExp tokens
 
 parseRelationalExpInternal :: Expression -> [Token] -> (Expression, [Token])
-parseRelationalExpInternal expr (LessThanT : tokens) =
-  parseRelationalExpInternal (BinOp LessThan expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
-parseRelationalExpInternal expr (GreaterThanT : tokens) =
-  parseRelationalExpInternal (BinOp GreaterThan expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
-parseRelationalExpInternal expr (LessThanOrEqualT : tokens) =
-  parseRelationalExpInternal (BinOp LessThanOrEqual expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
-parseRelationalExpInternal expr (GreaterThanOrEqualT : tokens) =
-  parseRelationalExpInternal (BinOp GreaterThanOrEqual expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
-parseRelationalExpInternal expr tokens = (expr, tokens)
+parseRelationalExpInternal expr tokens =
+  let (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
+   in case tokens of
+        (LessThanT : _) ->
+          parseRelationalExpInternal (BinOp LessThan expr nextTerm) tokensAfterNextTerm
+        (GreaterThanT : _) ->
+          parseRelationalExpInternal (BinOp GreaterThan expr nextTerm) tokensAfterNextTerm
+        (LessThanOrEqualT : _) ->
+          parseRelationalExpInternal (BinOp LessThanOrEqual expr nextTerm) tokensAfterNextTerm
+        (GreaterThanOrEqualT : _) ->
+          parseRelationalExpInternal (BinOp GreaterThanOrEqual expr nextTerm) tokensAfterNextTerm
+        _ -> (expr, tokens)
 
 parseAdditiveExp :: [Token] -> (Expression, [Token])
 -- AdditiveExp :== Term { ("+" | "-") Term }
@@ -144,15 +138,13 @@ parseAdditiveExp tokens =
     (term, rest) = parseTerm tokens
 
 parseAdditiveExpInternal :: Expression -> [Token] -> (Expression, [Token])
-parseAdditiveExpInternal expr (PlusT : tokens) =
-  parseAdditiveExpInternal (BinOp Addition expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseTerm tokens
-parseAdditiveExpInternal expr (MinusT : tokens) =
-  parseAdditiveExpInternal (BinOp Subtraction expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseTerm tokens
-parseAdditiveExpInternal expr tokens = (expr, tokens)
+parseAdditiveExpInternal expr tokens@(t : ts) =
+  let (nextFactor, tokensAfterNextFactor) = parseTerm ts
+   in case t of
+        PlusT -> parseAdditiveExpInternal (BinOp Addition expr nextFactor) tokensAfterNextFactor
+        MinusT -> parseAdditiveExpInternal (BinOp Subtraction expr nextFactor) tokensAfterNextFactor
+        _ -> (expr, tokens)
+parseAdditiveExpInternal _ [] = error "Invalid syntax in additive expression"
 
 parseTerm :: [Token] -> (Expression, [Token])
 -- Term ::= Term ( "*" | "/" ) Term | Factor
@@ -162,15 +154,13 @@ parseTerm tokens =
     (factor, rest) = parseFactor tokens
 
 parseTermInternal :: Expression -> [Token] -> (Expression, [Token])
-parseTermInternal expr (AsteriskT : tokens) =
-  parseTermInternal (BinOp Multiplication expr nextFactor1) tokensAfterNextFactor1
-  where
-    (nextFactor1, tokensAfterNextFactor1) = parseFactor tokens
-parseTermInternal expr (DivisionT : tokens) =
-  parseTermInternal (BinOp Division expr nextFactor2) tokensAfterNextFactor2
-  where
-    (nextFactor2, tokensAfterNextFactor2) = parseFactor tokens
-parseTermInternal expr tokens = (expr, tokens)
+parseTermInternal expr tokens@(t : ts) =
+  let (nextFactor, tokensAfterNextFactor) = parseFactor ts
+   in case t of
+        AsteriskT -> parseTermInternal (BinOp Multiplication expr nextFactor) tokensAfterNextFactor
+        DivisionT -> parseTermInternal (BinOp Division expr nextFactor) tokensAfterNextFactor
+        _ -> (expr, tokens)
+parseTermInternal _ [] = error "Invalid syntax in term"
 
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer

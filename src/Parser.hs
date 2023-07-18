@@ -117,18 +117,19 @@ parseRelationalExp tokens =
     (term, rest) = parseAdditiveExp tokens
 
 parseRelationalExpInternal :: Expression -> [Token] -> (Expression, [Token])
-parseRelationalExpInternal expr tokens =
-  let (nextTerm, tokensAfterNextTerm) = parseAdditiveExp tokens
-   in case tokens of
-        (LessThanT : _) ->
+parseRelationalExpInternal expr tokens@(t : ts) =
+  let (nextTerm, tokensAfterNextTerm) = parseAdditiveExp ts
+   in case t of
+        LessThanT ->
           parseRelationalExpInternal (BinOp LessThan expr nextTerm) tokensAfterNextTerm
-        (GreaterThanT : _) ->
+        GreaterThanT ->
           parseRelationalExpInternal (BinOp GreaterThan expr nextTerm) tokensAfterNextTerm
-        (LessThanOrEqualT : _) ->
+        LessThanOrEqualT ->
           parseRelationalExpInternal (BinOp LessThanOrEqual expr nextTerm) tokensAfterNextTerm
-        (GreaterThanOrEqualT : _) ->
+        GreaterThanOrEqualT ->
           parseRelationalExpInternal (BinOp GreaterThanOrEqual expr nextTerm) tokensAfterNextTerm
         _ -> (expr, tokens)
+parseRelationalExpInternal _ [] = error "Invalid syntax in relational expression"
 
 parseAdditiveExp :: [Token] -> (Expression, [Token])
 -- AdditiveExp :== Term { ("+" | "-") Term }

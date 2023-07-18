@@ -60,7 +60,7 @@ parseFuncDeclaration
 parseFuncDeclaration _ = error "Invalid function declaration"
 
 parseStatement :: [Token] -> Statement
-parseStatement (KeywordT Lexer.Return : tokens) = Parser.Return (parseExpression tokens)
+parseStatement (KeywordT ReturnKW : tokens) = Return (parseExpression tokens)
 parseStatement _ = error "Invalid statement"
 
 parseExpression :: [Token] -> Expression

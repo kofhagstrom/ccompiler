@@ -40,8 +40,8 @@ data Token
   deriving (Show, Eq)
 
 data Keyword
-  = Int
-  | Return
+  = IntKW
+  | ReturnKW
   deriving (Show, Eq)
 
 data Literal
@@ -55,7 +55,7 @@ type LexRow = String -> [Token]
 keywords :: Map String Keyword
 keywords =
   fromList
-    [ ("return", Return)
+    [ ("return", ReturnKW)
     ]
 
 singleCharTokens :: Map Char Token

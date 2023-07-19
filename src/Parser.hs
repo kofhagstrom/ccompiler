@@ -4,13 +4,38 @@ module Parser
     FuncDeclaration (..),
     Statement (..),
     Expression (..),
+    UnitaryOperator (..),
+    BinaryOperator (..),
   )
 where
 
 import Lexer
-  ( Keyword (..),
-    Literal (..),
-    Token (..),
+  ( Keyword (IntKW, ReturnKW),
+    Literal (IdentifierL, IntL),
+    Token
+      ( AndT,
+        AssignmentT,
+        AsteriskT,
+        BangT,
+        CloseBraceT,
+        CloseParenthesisT,
+        DivisionT,
+        GreaterThanOrEqualT,
+        GreaterThanT,
+        InequalityT,
+        KeywordT,
+        LessThanOrEqualT,
+        LessThanT,
+        LiteralT,
+        LogicalEqualityT,
+        MinusT,
+        OpenBraceT,
+        OpenParenthesisT,
+        OrT,
+        PlusT,
+        SemiColonT,
+        TildeT
+      ),
   )
 
 data UnitaryOperator
@@ -208,5 +233,6 @@ parseFactor (t : ts) =
    in case t of
         BangT -> (UnOp LogicalNegation expr, rest)
         TildeT -> (UnOp BitwiseComplement expr, rest)
+        MinusT -> (UnOp Negation expr, rest)
         _ -> error "Invalid syntax in factor"
 parseFactor _ = error "Invalid syntax in factor"

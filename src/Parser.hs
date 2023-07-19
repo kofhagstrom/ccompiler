@@ -13,14 +13,17 @@ import Lexer
     Token (..),
   )
 
-data Operator
-  = Addition
-  | Subtraction
-  | Negation
-  | Multiplication
-  | Division
+data UnitaryOperator
+  = Negation
   | LogicalNegation
   | BitwiseComplement
+  deriving (Show, Eq)
+
+data BinaryOperator
+  = Addition
+  | Subtraction
+  | Multiplication
+  | Division
   | LessThan
   | GreaterThan
   | LessThanOrEqual
@@ -33,16 +36,18 @@ data Operator
 
 data Expression
   = Constant Integer
-  | UnOp Operator Expression
-  | BinOp Operator Expression Expression
+  | UnOp UnitaryOperator Expression
+  | BinOp BinaryOperator Expression Expression
+  | Assignment String Expression
+  | Variable String
   deriving (Show, Eq)
 
 data Statement
   = Return Expression
-  | Int String Expression
+  | Declaration String (Maybe Expression)
   deriving (Show, Eq)
 
-data FuncDeclaration = Fun String Statement deriving (Show, Eq)
+data FuncDeclaration = Fun String [Statement] deriving (Show, Eq)
 
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
@@ -59,36 +64,55 @@ parseFuncDeclaration
       : CloseParenthesisT
       : OpenBraceT
       : tokens
-    ) = Fun funcName (parseStatement tokens)
+    ) = Fun funcName (parseStatements tokens)
 parseFuncDeclaration _ = error "Invalid function declaration"
 
-parseStatement :: [Token] -> Statement
+parseStatements :: [Token] -> [Statement]
+parseStatements [] = []
+parseStatements tokens =
+  statement : parseStatements rest
+  where
+    (statement, rest) = parseStatement tokens
+
+parseStatement :: [Token] -> (Statement, [Token])
 parseStatement
   ( KeywordT ReturnKW
       : tokens
-    ) = Return (parseExpression tokens)
+    ) = (Return expr, rest)
+    where
+      (expr, rest) = parseExpression tokens
 parseStatement
   ( KeywordT IntKW
       : LiteralT (IdentifierL identifier)
       : AssignmentT
       : tokens
     ) =
-    Int identifier (parseExpression tokens)
+    (Declaration identifier (Just expr), rest)
+    where
+      (expr, rest) = parseExpression tokens
+parseStatement
+  ( KeywordT IntKW
+      : LiteralT (IdentifierL identifier)
+      : SemiColonT
+      : tokens
+    ) =
+    (Declaration identifier Nothing, tokens)
 parseStatement _ = error "Invalid statement"
 
-parseExpression :: [Token] -> Expression
+parseExpression :: [Token] -> (Expression, [Token])
 -- Expression ::= LogicalAndExp { "||" LogicalAndExp }
 parseExpression tokens =
   parseExpressionInternal term rest
   where
     (term, rest) = parseLogicalAndExp tokens
 
-parseExpressionInternal :: Expression -> [Token] -> Expression
+parseExpressionInternal :: Expression -> [Token] -> (Expression, [Token])
 parseExpressionInternal expr (OrT : tokens) =
   parseExpressionInternal (BinOp LogicalOr expr nextTerm) tokensAfterNextTerm
   where
     (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
-parseExpressionInternal expr (SemiColonT : _) = expr
+parseExpressionInternal expr (SemiColonT : CloseBraceT : tokens) = (expr, tokens)
+parseExpressionInternal expr (SemiColonT : tokens) = (expr, tokens)
 parseExpressionInternal _ _ = error "Invalid syntax in expression"
 
 parseLogicalAndExp :: [Token] -> (Expression, [Token])

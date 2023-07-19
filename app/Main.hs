@@ -3,7 +3,7 @@ module Main
   )
 where
 
-import Generator ()
+import Generator (generateAssembly)
 import Lexer (lexChars)
 import Parser (parseAST)
 import System.Environment
@@ -12,7 +12,7 @@ run :: String -> IO ()
 run string =
   case lexing of
     Left err -> print err
-    Right tokens -> print $ parseAST tokens
+    Right tokens -> putStr . generateAssembly $ parseAST tokens
   where
     -- putStr $ generateAssembly (parseAST tokens)
 

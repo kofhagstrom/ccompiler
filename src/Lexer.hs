@@ -33,6 +33,8 @@ data Token
   | AndT
   | OrT
   | AssignmentT
+  | ColonT
+  | QuestionMarkT
   | KeywordT Keyword
   | LiteralT Literal
   | ErrorT String
@@ -41,6 +43,8 @@ data Token
 data Keyword
   = IntKW
   | ReturnKW
+  | IfKW
+  | ElseKW
   deriving (Show, Eq)
 
 data Literal
@@ -55,7 +59,9 @@ keywords :: Map String Keyword
 keywords =
   fromList
     [ ("return", ReturnKW),
-      ("int", IntKW)
+      ("int", IntKW),
+      ("if", IfKW),
+      ("else", ElseKW)
     ]
 
 singleCharTokens :: Map Char Token
@@ -72,7 +78,9 @@ singleCharTokens =
       ('~', TildeT),
       ('+', PlusT),
       ('*', AsteriskT),
-      ('/', DivisionT)
+      ('/', DivisionT),
+      ('?', QuestionMarkT),
+      (':', ColonT)
     ]
 
 loxMultiCharTokens :: Map Char LexRow
@@ -117,13 +125,13 @@ lexMultiCharToken string =
     lexRest
       | isDigit char = lexIntegerLiteral string
       | isAlphaNum char = lexIdentifiersAndKeywords string
-      | otherwise = [ErrorT "Invalid token."]
+      | otherwise = [ErrorT $ "Invalid token: " ++ [char]]
 
 lexAnd :: LexRow
 lexAnd [] = undefined
 lexAnd (x : xs)
   | x == '&' = AndT : lexRow xs
-  | otherwise = [ErrorT "Invalid token."]
+  | otherwise = [ErrorT $ "Invalid token: " ++ [x]]
 
 lexLogicalEquality :: LexRow
 lexLogicalEquality [] = undefined
@@ -135,7 +143,7 @@ lexOr :: LexRow
 lexOr [] = undefined
 lexOr (x : xs)
   | x == '|' = OrT : lexRow xs
-  | otherwise = [ErrorT "Invalid token."]
+  | otherwise = [ErrorT $ "Invalid token " ++ [x]]
 
 lexBang :: LexRow
 lexBang [] = undefined
@@ -173,7 +181,8 @@ lexIdentifiersAndKeywords string =
     Nothing -> LiteralT (IdentifierL prefix) : lexRow suffix
   where
     keyword = Data.Map.lookup prefix keywords
-    (prefix, suffix) = span isAlphaNum string
+    (prefix, suffix) = span isAlphaNumOrUnderscore string
+    isAlphaNumOrUnderscore c = isAlphaNum c || c == '_'
 
 type ErrorMessage = String
 

@@ -185,3 +185,63 @@ spec = do
                   )
               ]
           )
+  describe "week 4" $ do
+    it "and_false" $
+      parseHelper "int main() {return 1 && 0;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Return
+                  (BinOp LogicalAnd (Constant 1) (Constant 0))
+              ]
+          )
+    it "and_true" $
+      parseHelper "int main() {return 1 && 1;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Return
+                  (BinOp LogicalAnd (Constant 1) (Constant 1))
+              ]
+          )
+    it "skip_on_failure_multi_short_circuit" $
+      parseHelper "int main() {int a = 0; a || (a = 3) || (a = 4); return a;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration "a" (Just (Constant 0)),
+                Expression (BinOp LogicalOr (BinOp LogicalOr (Variable "a") (Assignment "a" (Constant 3))) (Assignment "a" (Constant 4))),
+                Return (Variable "a")
+              ]
+          )
+    it "skip_on_failure_short_circuit_and" $
+      parseHelper "int main() {int a = 0;int b = 0;a && (b = 5);return b;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration "a" (Just (Constant 0)),
+                Declaration "b" (Just (Constant 0)),
+                Expression (BinOp LogicalAnd (Variable "a") (Assignment "b" (Constant 5))),
+                Return (Variable "b")
+              ]
+          )
+    it "skip_on_failure_short_circuit_or" $
+      parseHelper "int main() {int a = 1;int b = 0;a || (b = 5);return b;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration "a" (Just (Constant 1)),
+                Declaration "b" (Just (Constant 0)),
+                Expression (BinOp LogicalOr (Variable "a") (Assignment "b" (Constant 5))),
+                Return (Variable "b")
+              ]
+          )
+    it "lt_false" $
+      parseHelper "int main() {return 2 < 1;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Return
+                  (BinOp LessThan (Constant 2) (Constant 1))
+              ]
+          )

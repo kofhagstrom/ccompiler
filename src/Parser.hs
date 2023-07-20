@@ -70,6 +70,7 @@ data Expression
 data Statement
   = Return Expression
   | Declaration String (Maybe Expression)
+  | Expression Expression
   deriving (Show, Eq)
 
 data FuncDeclaration = Fun String [Statement] deriving (Show, Eq)
@@ -122,7 +123,10 @@ parseStatement
       : tokens
     ) =
     (Declaration identifier Nothing, tokens)
-parseStatement _ = error "Invalid statement"
+parseStatement tokens =
+  (Expression expr, rest)
+  where
+    (expr, rest) = parseExpression tokens
 
 parseExpression :: [Token] -> (Expression, [Token])
 -- Expression ::= LogicalAndExp { "||" LogicalAndExp }
@@ -134,6 +138,10 @@ parseExpression tokens =
 parseExpressionInternal :: Expression -> [Token] -> (Expression, [Token])
 parseExpressionInternal expr (OrT : tokens) =
   parseExpressionInternal (BinOp LogicalOr expr nextTerm) tokensAfterNextTerm
+  where
+    (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
+parseExpressionInternal (Variable var) (AssignmentT : tokens) =
+  parseExpressionInternal (Assignment var nextTerm) tokensAfterNextTerm
   where
     (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
 parseExpressionInternal expr (SemiColonT : CloseBraceT : tokens) = (expr, tokens)
@@ -229,6 +237,7 @@ parseTermInternal _ [] = error "Invalid syntax in term"
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
 parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
+parseFactor (LiteralT (IdentifierL identifier) : tokens) = (Variable identifier, tokens)
 parseFactor (OpenParenthesisT : tokens) = parseExpression tokens
 parseFactor (t : ts) =
   let (expr, rest) = parseFactor ts

@@ -4,18 +4,16 @@ module Main
 where
 
 import Generator (generateAssembly)
-import Lexer (lexChars)
+import Lexer (Token, lexChars)
 import Parser (parseAST)
-import System.Environment
+import System.Environment (getArgs)
 
-run :: String -> IO ()
-run string =
+run :: String -> ([Token] -> IO ()) -> IO ()
+run string f =
   case lexing of
     Left err -> print err
-    Right tokens -> putStr . generateAssembly $ parseAST tokens
+    Right tokens -> f tokens
   where
-    -- putStr $ generateAssembly (parseAST tokens)
-
     lexing = lexChars $ lines string
 
 main :: IO ()
@@ -24,5 +22,12 @@ main = do
   case args of
     [file] -> do
       x <- readFile file
-      run x
+      run x (putStr . show . generateAssembly . parseAST)
+    [file, mode] -> do
+      x <- readFile file
+      case mode of
+        "lex" -> run x print
+        "parse" -> run x (print . parseAST)
+        "assemble" -> run x (putStr . show . generateAssembly . parseAST)
+        _ -> putStrLn "Invalid mode"
     _ -> putStrLn "Wrong number of arguments"

@@ -138,7 +138,8 @@ parseExpressionInternal expr (OrT : tokens) =
     (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
 parseExpressionInternal expr (SemiColonT : CloseBraceT : tokens) = (expr, tokens)
 parseExpressionInternal expr (SemiColonT : tokens) = (expr, tokens)
-parseExpressionInternal _ _ = error "Invalid syntax in expression"
+parseExpressionInternal expr (CloseParenthesisT : tokens) = (expr, tokens)
+parseExpressionInternal expr tokens = error $ "Invalid syntax in expression: " ++ show expr ++ " " ++ show tokens
 
 parseLogicalAndExp :: [Token] -> (Expression, [Token])
 -- LogicalAndExp :== EqualityExp { "&&" EqualityExp }
@@ -228,11 +229,12 @@ parseTermInternal _ [] = error "Invalid syntax in term"
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
 parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
+parseFactor (OpenParenthesisT : tokens) = parseExpression tokens
 parseFactor (t : ts) =
   let (expr, rest) = parseFactor ts
    in case t of
         BangT -> (UnOp LogicalNegation expr, rest)
         TildeT -> (UnOp BitwiseComplement expr, rest)
         MinusT -> (UnOp Negation expr, rest)
-        _ -> error "Invalid syntax in factor"
+        _ -> error ("Invalid syntax in factor " ++ show (t : ts))
 parseFactor _ = error "Invalid syntax in factor"

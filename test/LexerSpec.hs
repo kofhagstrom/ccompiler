@@ -7,9 +7,31 @@ spec :: Spec
 spec = do
   describe "" $
     it "" $
-      lexChars (lines "a = 1 ? 2 : 3; if (flag) return 0; else if (other_flag) return 1; else return 2;")
+      lexChars
+        ( lines $
+            "int main(){"
+              ++ "a = 1 ? 2 : 3;"
+              ++ " if (flag) return 0;"
+              ++ "else if (other_flag) return 1;"
+              ++ "else return 2;"
+              ++ "a==!~-(b+c);"
+              ++ "a>b;"
+              ++ "b<a;"
+              ++ "a>=b;"
+              ++ "a<=b;"
+              ++ "a!=b;"
+              ++ "a&&b;"
+              ++ "a||b;"
+              ++ " a=b;"
+              ++ "}"
+        )
         `shouldBe` Right
-          [ LiteralT (IdentifierL "a"),
+          [ KeywordT IntKW,
+            LiteralT (IdentifierL "main"),
+            OpenParenthesisT,
+            CloseParenthesisT,
+            OpenBraceT,
+            LiteralT (IdentifierL "a"),
             AssignmentT,
             LiteralT (IntL 1),
             QuestionMarkT,
@@ -35,21 +57,49 @@ spec = do
             KeywordT ElseKW,
             KeywordT ReturnKW,
             LiteralT (IntL 2),
-            SemiColonT
-          ]
-  describe "" $
-    it "" $
-      lexChars (lines "int main(){return -!142;}")
-        `shouldBe` Right
-          [ KeywordT IntKW,
-            LiteralT (IdentifierL "main"),
-            OpenParenthesisT,
-            CloseParenthesisT,
-            OpenBraceT,
-            KeywordT ReturnKW,
-            MinusT,
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            LogicalEqualityT,
             BangT,
-            LiteralT (IntL 142),
+            TildeT,
+            MinusT,
+            OpenParenthesisT,
+            LiteralT (IdentifierL "b"),
+            PlusT,
+            LiteralT (IdentifierL "c"),
+            CloseParenthesisT,
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            GreaterThanT,
+            LiteralT (IdentifierL "b"),
+            SemiColonT,
+            LiteralT (IdentifierL "b"),
+            LessThanT,
+            LiteralT (IdentifierL "a"),
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            GreaterThanOrEqualT,
+            LiteralT (IdentifierL "b"),
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            LessThanOrEqualT,
+            LiteralT (IdentifierL "b"),
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            NotEqualT,
+            LiteralT (IdentifierL "b"),
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            AndT,
+            LiteralT (IdentifierL "b"),
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            OrT,
+            LiteralT (IdentifierL "b"),
+            SemiColonT,
+            LiteralT (IdentifierL "a"),
+            AssignmentT,
+            LiteralT (IdentifierL "b"),
             SemiColonT,
             CloseBraceT
           ]

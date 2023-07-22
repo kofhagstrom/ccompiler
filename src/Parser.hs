@@ -6,11 +6,13 @@ module Parser
     Expression (..),
     UnitaryOperator (..),
     BinaryOperator (..),
+    BlockItem (..),
+    Declaration (..),
   )
 where
 
 import Lexer
-  ( Keyword (IntKW, ReturnKW),
+  ( Keyword (ElseKW, IfKW, IntKW, ReturnKW),
     Literal (IdentifierL, IntL),
     Token
       ( AndT,
@@ -69,20 +71,26 @@ data Expression
 
 data Statement
   = Return Expression
-  | Declaration String (Maybe Expression)
   | Expression Expression
+  | If Expression Statement (Maybe Statement)
   deriving (Show, Eq)
 
-data FuncDeclaration = Fun String [Statement] deriving (Show, Eq)
+data Declaration = Declaration String (Maybe Expression) deriving (Show, Eq)
+
+data BlockItem = State Statement | Declare Declaration deriving (Show, Eq)
+
+data FuncDeclaration = Fun String [BlockItem] deriving (Show, Eq)
 
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
 type Parser = [Token] -> Program
 
 parseAST :: Parser
+-- Program ::= FuncDeclaration
 parseAST tokens = Program (parseFuncDeclaration tokens)
 
 parseFuncDeclaration :: [Token] -> FuncDeclaration
+-- FuncDeclaration ::= "int" Identifier "(" ")" "{" { BlockItem } "}"
 parseFuncDeclaration
   ( _
       : LiteralT (IdentifierL funcName)
@@ -90,24 +98,29 @@ parseFuncDeclaration
       : CloseParenthesisT
       : OpenBraceT
       : tokens
-    ) = Fun funcName (parseStatements tokens)
+    ) = Fun funcName (parseBlockItems tokens)
 parseFuncDeclaration _ = error "Invalid function declaration"
 
-parseStatements :: [Token] -> [Statement]
-parseStatements [] = []
-parseStatements tokens =
-  statement : parseStatements rest
+parseBlockItems :: [Token] -> [BlockItem]
+parseBlockItems [] = []
+parseBlockItems tokens =
+  blockItem : parseBlockItems rest
+  where
+    (blockItem, rest) = parseBlockItem tokens
+
+parseBlockItem :: [Token] -> (BlockItem, [Token])
+-- BlockItem ::= Statement | Declaration
+parseBlockItem tokens@(KeywordT IntKW : _) =
+  (Declare declaration, rest)
+  where
+    (declaration, rest) = parseDeclaration tokens
+parseBlockItem tokens = (State statement, rest)
   where
     (statement, rest) = parseStatement tokens
 
-parseStatement :: [Token] -> (Statement, [Token])
-parseStatement
-  ( KeywordT ReturnKW
-      : tokens
-    ) = (Return expr, rest)
-    where
-      (expr, rest) = parseExpression tokens
-parseStatement
+parseDeclaration :: [Token] -> (Declaration, [Token])
+-- Declaration ::= "int" Identifier [ "=" Expression ] ";"
+parseDeclaration
   ( KeywordT IntKW
       : LiteralT (IdentifierL identifier)
       : AssignmentT
@@ -116,17 +129,50 @@ parseStatement
     (Declaration identifier (Just expr), rest)
     where
       (expr, rest) = parseExpression tokens
-parseStatement
+parseDeclaration
   ( KeywordT IntKW
       : LiteralT (IdentifierL identifier)
       : SemiColonT
       : tokens
     ) =
     (Declaration identifier Nothing, tokens)
+parseDeclaration tokens = error $ "Invalid syntax in declaration: " ++ show tokens
+
+parseStatement :: [Token] -> (Statement, [Token])
+-- Statement ::= "return" Expression ";"
+--             | "int" Identifier [ "=" Expression ] ";"
+--             | "if" "(" Expression ")" Statement [ "else" Statement ]
+parseStatement
+  ( KeywordT ReturnKW
+      : tokens
+    ) = (Return expr, rest)
+    where
+      (expr, rest) = parseExpression tokens
+parseStatement (KeywordT IfKW : OpenParenthesisT : tokens) =
+  (If expr statement elseStatement, rest)
+  where
+    (expr, restAfterExpr) = parseExpression tokens
+    (statement, restAfterStatement) = parseStatement restAfterExpr
+    (elseStatement, rest) = parseElseStatement restAfterStatement
 parseStatement tokens =
   (Expression expr, rest)
   where
     (expr, rest) = parseExpression tokens
+
+parseElseStatement :: [Token] -> (Maybe Statement, [Token])
+parseElseStatement (KeywordT IfKW : OpenParenthesisT : tokens) =
+  (Just (If expr statement elseStatement), rest)
+  where
+    (expr, restAfterExpr) = parseExpression tokens
+    (statement, restAfterStatement) = parseStatement restAfterExpr
+    (elseStatement, rest) = parseElseStatement restAfterStatement
+parseElseStatement (OpenBraceT : tokens) = (Just statement, rest)
+  where
+    (statement, rest) = parseStatement tokens
+parseElseStatement (KeywordT ElseKW : tokens) = (Just stmt, tokensAfter)
+  where
+    (stmt, tokensAfter) = parseStatement tokens
+parseElseStatement tokens = (Nothing, tokens)
 
 parseExpression :: [Token] -> (Expression, [Token])
 -- Expression ::= LogicalAndExp { "||" LogicalAndExp }
@@ -245,5 +291,5 @@ parseFactor (t : ts) =
         BangT -> (UnOp LogicalNegation expr, rest)
         TildeT -> (UnOp BitwiseComplement expr, rest)
         MinusT -> (UnOp Negation expr, rest)
-        _ -> error ("Invalid syntax in factor " ++ show (t : ts))
-parseFactor _ = error "Invalid syntax in factor"
+        _ -> error $ "Invalid syntax in factor " ++ show (t : ts)
+parseFactor tokens = error $ "Invalid syntax in factor" ++ show tokens

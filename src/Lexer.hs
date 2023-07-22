@@ -74,7 +74,6 @@ singleCharTokens =
       ('}', CloseBraceT),
       (';', SemiColonT),
       ('-', MinusT),
-      ('!', BangT),
       ('~', TildeT),
       ('+', PlusT),
       ('*', AsteriskT),
@@ -101,6 +100,7 @@ lexChars :: Lexer
 lexChars strings = sequence . checkForErrors $ map lexRow strings
 
 lexRow :: LexRow
+lexRow [] = []
 lexRow string =
   if null string
     then []
@@ -115,6 +115,7 @@ lexRow string =
     token = Data.Map.lookup char singleCharTokens
 
 lexMultiCharToken :: LexRow
+lexMultiCharToken [] = undefined
 lexMultiCharToken string =
   case maybeFun of
     Just fun -> fun rest
@@ -147,9 +148,9 @@ lexOr (x : xs)
 
 lexBang :: LexRow
 lexBang [] = undefined
-lexBang (x : xs)
+lexBang string@(x : xs)
   | x == '=' = NotEqualT : lexRow xs
-  | otherwise = BangT : lexRow xs
+  | otherwise = BangT : lexRow string
 
 lexSlash :: LexRow
 lexSlash [] = undefined

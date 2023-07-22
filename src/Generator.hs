@@ -1,13 +1,6 @@
 module Generator (generateAssembly) where
 
 import Parser
-  ( BinaryOperator (Addition),
-    Expression (BinOp, Constant, UnOp),
-    FuncDeclaration (Fun),
-    Program (Program),
-    Statement (Return),
-    UnitaryOperator (LogicalNegation, Negation),
-  )
 
 newtype AssemblyProgram = AssemblyProgram [AssemblyFunction]
 
@@ -52,7 +45,11 @@ instance Show Operation where
 
 generateAssembly :: Program -> AssemblyProgram
 generateAssembly (Program (Fun funcName statements)) =
-  AssemblyProgram [AssemblyFunction funcName (concatMap generateStatement statements)]
+  AssemblyProgram [AssemblyFunction funcName (concatMap generateBlockItem statements)]
+
+generateBlockItem :: BlockItem -> [Instruction]
+generateBlockItem (State statement) = generateStatement statement
+generateBlockItem _ = error "Invalid block item"
 
 generateStatement :: Statement -> [Instruction]
 generateStatement (Return expr) =

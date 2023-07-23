@@ -12,8 +12,7 @@ data AssemblyFunction = AssemblyFunction String [Instruction]
 instance Show AssemblyFunction where
   show (AssemblyFunction funcName instructions) =
     unlines
-      ( [ ".global _" ++ funcName,
-          ".balign 4",
+      ( [ ".globl _" ++ funcName,
           "_" ++ funcName ++ ":"
         ]
           ++ map show instructions
@@ -31,24 +30,33 @@ data Operation
   | Cmp Arg Arg
   | Cset Arg Arg
   | Add Arg Arg Arg
-  | Neg Arg Arg
+  | Neg Arg
+  | Push Arg
+  | Pop Arg
   | Ret
   deriving (Eq)
 
 instance Show Operation where
-  show (Mov a1 a2) = "mov    " ++ a1 ++ ", " ++ a2
+  show (Mov a1 a2) = "movl    " ++ a1 ++ ", " ++ a2
   show (Cmp a1 a2) = "cmp    " ++ a1 ++ ", " ++ a2
   show (Cset a1 a2) = "cset   " ++ a1 ++ ", " ++ a2
   show (Add a1 a2 a3) = "add    " ++ a1 ++ ", " ++ a2 ++ ", " ++ a3
-  show (Neg a1 a2) = "neg    " ++ a1 ++ ", " ++ a2
+  show (Neg a1) = "neg    " ++ a1
+  show (Push a1) = "push   " ++ a1
+  show (Pop a1) = "pop    " ++ a1
   show Ret = "ret"
 
 generateAssembly :: Program -> AssemblyProgram
 generateAssembly (Program (Fun funcName statements)) =
-  AssemblyProgram [AssemblyFunction funcName (concatMap generateBlockItem statements)]
+  AssemblyProgram
+    [ AssemblyFunction
+        funcName
+        (concatMap generateBlockItem statements)
+    ]
 
 generateBlockItem :: BlockItem -> [Instruction]
-generateBlockItem (State statement) = generateStatement statement
+generateBlockItem (State statement) =
+  generateStatement statement
 generateBlockItem _ = error "Invalid block item"
 
 generateStatement :: Statement -> [Instruction]
@@ -58,12 +66,12 @@ generateStatement _ = error "Invalid statement"
 
 generateExpression :: Expression -> [Instruction]
 generateExpression (Constant value) =
-  [ Instruction (Mov "x0" (show value))
+  [ Instruction (Mov ("$" ++ show value) "%eax")
   ]
 generateExpression (UnOp Negation expr) =
   generateExpression
     expr
-    ++ [Instruction (Neg "x0" "x0")]
+    ++ [Instruction (Neg "%eax")]
 generateExpression (UnOp LogicalNegation expr) =
   generateExpression expr
     ++ [ Instruction (Cmp "x0" "0"),
@@ -71,8 +79,8 @@ generateExpression (UnOp LogicalNegation expr) =
        ]
 generateExpression (BinOp Addition expr1 expr2) =
   generateExpression expr1
-    ++ [Instruction (Mov "x1" "x0")]
+    ++ [Instruction (Push "SP")]
     ++ generateExpression expr2
-    ++ [ Instruction (Add "x0" "x0" "x1")
-       ]
+    ++ [Instruction (Pop "SP")]
+    ++ [Instruction (Add "x0" "x0" "x1")]
 generateExpression _ = error "Invalid expression"

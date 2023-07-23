@@ -11,7 +11,7 @@ spec = do
         ( lines $
             "int main(){"
               ++ "a = 1 ? 2 : 3;"
-              ++ " if (flag) return 0;"
+              ++ "if (flag) return 0;"
               ++ "else if (other_flag) return 1;"
               ++ "else return 2;"
               ++ "a==!~-(b+c);"
@@ -22,7 +22,7 @@ spec = do
               ++ "a!=b;"
               ++ "a&&b;"
               ++ "a||b;"
-              ++ " a=b;"
+              ++ "a=b;"
               ++ "}"
         )
         `shouldBe` Right

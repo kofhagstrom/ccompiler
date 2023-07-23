@@ -12,7 +12,7 @@ parseHelper string =
 
 spec :: Spec
 spec = do
-  describe "Week 1" $ do
+  describe "week_1" $ do
     it "return_0" $
       parseHelper "int main(){return 0;}"
         `shouldBe` Program
@@ -46,7 +46,7 @@ spec = do
                   )
               ]
           )
-  describe "Week 2" $ do
+  describe "week_2" $ do
     it "bitwise" $
       parseHelper "int main() {return ~12;}"
         `shouldBe` Program
@@ -114,7 +114,7 @@ spec = do
                   )
               ]
           )
-  describe "week 3" $ do
+  describe "week_3" $ do
     it "add" $
       parseHelper "int main() {return 1+2;}"
         `shouldBe` Program
@@ -226,7 +226,7 @@ spec = do
                   )
               ]
           )
-  describe "week 4" $ do
+  describe "week_4" $ do
     it "and_false" $
       parseHelper "int main() {return 1 && 0;}"
         `shouldBe` Program
@@ -295,7 +295,7 @@ spec = do
                   )
               ]
           )
-  describe "week 6" $ do
+  describe "week_6" $ do
     it "if_1" $
       parseHelper "int main() {if (flag) return 0; else if (other_flag) return 1; else return 2;}"
         `shouldBe` Program
@@ -345,6 +345,24 @@ spec = do
                       (Variable "flag")
                       (Return (Constant 0))
                       (Just (If (Variable "other_flag") (Return (Constant 1)) Nothing))
+                  )
+              ]
+          )
+    it "if_5" $
+      parseHelper "int main() {a = 1 ? 2 : 3;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ State
+                  ( Expression
+                      ( Assignment
+                          "a"
+                          ( ConditionalExpression
+                              (Constant 1)
+                              (Constant 2)
+                              (Constant 3)
+                          )
+                      )
                   )
               ]
           )

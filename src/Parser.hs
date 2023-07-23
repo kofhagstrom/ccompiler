@@ -11,6 +11,7 @@ module Parser
   )
 where
 
+import Debug.Trace (trace)
 import Lexer
   ( Keyword (ElseKW, IfKW, IntKW, ReturnKW),
     Literal (IdentifierL, IntL),
@@ -21,6 +22,7 @@ import Lexer
         BangT,
         CloseBraceT,
         CloseParenthesisT,
+        ColonT,
         DivisionT,
         GreaterThanOrEqualT,
         GreaterThanT,
@@ -35,6 +37,7 @@ import Lexer
         OpenParenthesisT,
         OrT,
         PlusT,
+        QuestionMarkT,
         SemiColonT,
         TildeT
       ),
@@ -67,12 +70,14 @@ data Expression
   | BinOp BinaryOperator Expression Expression
   | Assignment String Expression
   | Variable String
+  | ConditionalExpression Expression Expression Expression
   deriving (Show, Eq)
 
 data Statement
   = Return Expression
   | Expression Expression
   | If Expression Statement (Maybe Statement)
+  | Conditional Expression Statement (Maybe Statement)
   deriving (Show, Eq)
 
 data Declaration = Declaration String (Maybe Expression) deriving (Show, Eq)
@@ -85,9 +90,12 @@ newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
 type Parser = [Token] -> Program
 
+debug :: c -> String -> c
+debug = flip trace
+
 parseAST :: Parser
 -- Program ::= FuncDeclaration
-parseAST tokens = Program (parseFuncDeclaration tokens)
+parseAST tokens = Program (parseFuncDeclaration tokens) -- `debug` show tokens
 
 parseFuncDeclaration :: [Token] -> FuncDeclaration
 -- FuncDeclaration ::= "int" Identifier "(" ")" "{" { BlockItem } "}"
@@ -103,8 +111,9 @@ parseFuncDeclaration _ = error "Invalid function declaration"
 
 parseBlockItems :: [Token] -> [BlockItem]
 parseBlockItems [] = []
+parseBlockItems (CloseBraceT : _) = []
 parseBlockItems tokens =
-  blockItem : parseBlockItems rest
+  blockItem : parseBlockItems rest -- `debug` show tokens
   where
     (blockItem, rest) = parseBlockItem tokens
 
@@ -166,34 +175,65 @@ parseElseStatement (KeywordT IfKW : OpenParenthesisT : tokens) =
     (expr, restAfterExpr) = parseExpression tokens
     (statement, restAfterStatement) = parseStatement restAfterExpr
     (elseStatement, rest) = parseElseStatement restAfterStatement
-parseElseStatement (OpenBraceT : tokens) = (Just statement, rest)
+parseElseStatement (KeywordT ElseKW : OpenBraceT : tokens) = (Just statement, rest)
   where
     (statement, rest) = parseStatement tokens
-parseElseStatement (KeywordT ElseKW : tokens) = (Just stmt, tokensAfter)
+parseElseStatement (KeywordT ElseKW : tokens) = (Just statement, tokensAfter)
   where
-    (stmt, tokensAfter) = parseStatement tokens
+    (statement, tokensAfter) = parseStatement tokens
 parseElseStatement tokens = (Nothing, tokens)
 
 parseExpression :: [Token] -> (Expression, [Token])
--- Expression ::= LogicalAndExp { "||" LogicalAndExp }
+-- Expression ::= Identifier "=" Expression
+--              | ConditionalExpression
 parseExpression tokens =
   parseExpressionInternal term rest
   where
-    (term, rest) = parseLogicalAndExp tokens
+    (term, rest) = parseConditionalExpression tokens
 
 parseExpressionInternal :: Expression -> [Token] -> (Expression, [Token])
-parseExpressionInternal expr (OrT : tokens) =
-  parseExpressionInternal (BinOp LogicalOr expr nextTerm) tokensAfterNextTerm
-  where
-    (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
 parseExpressionInternal (Variable var) (AssignmentT : tokens) =
   parseExpressionInternal (Assignment var nextTerm) tokensAfterNextTerm
   where
-    (nextTerm, tokensAfterNextTerm) = parseLogicalAndExp tokens
+    (nextTerm, tokensAfterNextTerm) = parseConditionalExpression tokens
 parseExpressionInternal expr (SemiColonT : CloseBraceT : tokens) = (expr, tokens)
 parseExpressionInternal expr (SemiColonT : tokens) = (expr, tokens)
 parseExpressionInternal expr (CloseParenthesisT : tokens) = (expr, tokens)
+parseExpressionInternal expr (ColonT : tokens) = (expr, tokens)
 parseExpressionInternal expr tokens = error $ "Invalid syntax in expression: " ++ show expr ++ " " ++ show tokens
+
+parseConditionalExpression :: [Token] -> (Expression, [Token])
+-- ConditionalExpression ::= LogicalOrExp [ "?" Expression ":" ConditionalExpression ]
+parseConditionalExpression tokens =
+  parseConditionalExpressionInternal term rest
+  where
+    (term, rest) = parseLogicalOrExp tokens
+
+parseConditionalExpressionInternal :: Expression -> [Token] -> (Expression, [Token])
+parseConditionalExpressionInternal expr (QuestionMarkT : tokens) =
+  parseConditionalExpressionInternal
+    ( ConditionalExpression expr trueExpr falseExpr
+    )
+    tokensAfterFalseExpr
+  where
+    (trueExpr, tokensAfterTrueExpr) = parseExpression tokens
+    (falseExpr, tokensAfterFalseExpr) = parseConditionalExpression tokensAfterTrueExpr
+parseConditionalExpressionInternal expr tokens = (expr, tokens)
+
+parseLogicalOrExp :: [Token] -> (Expression, [Token])
+-- LogicalOrExp :== LogicalAndExp { "||" LogicalAndExp }
+parseLogicalOrExp tokens =
+  parseLogicalOrExpInternal term rest
+  where
+    (term, rest) = parseLogicalAndExp tokens
+
+parseLogicalOrExpInternal :: Expression -> [Token] -> (Expression, [Token])
+parseLogicalOrExpInternal expr tokens@(t : ts) =
+  let (nextFactor, tokensAfterNextFactor) = parseLogicalAndExp ts
+   in case t of
+        OrT -> parseLogicalOrExpInternal (BinOp LogicalOr expr nextFactor) tokensAfterNextFactor
+        _ -> (expr, tokens)
+parseLogicalOrExpInternal _ [] = error "Invalid syntax in logical or expression"
 
 parseLogicalAndExp :: [Token] -> (Expression, [Token])
 -- LogicalAndExp :== EqualityExp { "&&" EqualityExp }

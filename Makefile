@@ -22,3 +22,6 @@ make run:
 	as test/compilation/assembly.s -o test/compilation/assembly.o
 	clang -arch arm64 -o test/compilation/main test/compilation/assembly.o
 	./test/compilation/main
+
+make real:
+	gcc -S -O3 -fno-asynchronous-unwind -tables test/compilation/testingfile.c 

@@ -14,7 +14,6 @@ import Lexer
     Literal (IdentifierL, IntL),
     Token (..),
   )
-import Parser (BinaryOperator (Subtraction))
 
 data UnaryOperator
   = Negation
@@ -26,6 +25,7 @@ data BinaryOperator
   = Addition
   | Multiplication
   | Division
+  | Subtraction
   deriving (Show, Eq)
 
 data Expression
@@ -133,12 +133,12 @@ parseExpression =
   ( do
       factor <- parseTerm
       parseTs [PlusT]
-      BinOp Addition factor <$> ParseTerm
+      BinOp Addition factor <$> parseTerm
   )
     <|> ( do
             factor <- parseTerm
             parseTs [MinusT]
-            BinOp Subtraction factor <$> ParseTerm
+            BinOp Subtraction factor <$> parseTerm
         )
     <|> parseTerm
 

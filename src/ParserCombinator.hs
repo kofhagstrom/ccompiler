@@ -14,6 +14,7 @@ import Lexer
     Literal (IdentifierL, IntL),
     Token (..),
   )
+import Parser (BinaryOperator (Subtraction))
 
 data UnaryOperator
   = Negation
@@ -27,7 +28,6 @@ data BinaryOperator
   | Division
   deriving (Show, Eq)
 
--- <exp> ::= <exp> <binary_op> <exp> | <unary_op> <exp> | "(" <exp> ")" | <int> | "var" <str>
 data Expression
   = BinOp BinaryOperator Expression Expression
   | UnOp UnaryOperator Expression
@@ -35,13 +35,10 @@ data Expression
   | Variable String
   deriving (Show, Eq)
 
--- <statement> ::= "return" <exp> ";"
 newtype Statement = Return Expression deriving (Show, Eq)
 
--- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
 data FuncDeclaration = Fun String Statement deriving (Show, Eq)
 
--- <program> ::= <function>
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
 data ParseError = Error String | UnexpectedError deriving (Show)
@@ -130,11 +127,20 @@ parseTerm =
         )
     <|> parseFactor
 
--- parseFactor <* ((parseTs [AsteriskT] *> parseFactor) <|> (parseTs [DivisionT] *> parseFactor))
-
 -- <exp> ::= <term> { ("+" | "-") <term> }
 parseExpression :: Parser Expression
-parseExpression = parseTerm
+parseExpression =
+  ( do
+      factor <- parseTerm
+      parseTs [PlusT]
+      BinOp Addition factor <$> ParseTerm
+  )
+    <|> ( do
+            factor <- parseTerm
+            parseTs [MinusT]
+            BinOp Subtraction factor <$> ParseTerm
+        )
+    <|> parseTerm
 
 -- <statement> ::= "return" <exp> ";"
 parseStatement :: Parser Statement

@@ -11,7 +11,6 @@ module Parser
   )
 where
 
-import Debug.Trace (trace)
 import Lexer
   ( Keyword (ElseKW, IfKW, IntKW, ReturnKW),
     Literal (IdentifierL, IntL),
@@ -89,9 +88,6 @@ data FuncDeclaration = Fun String [BlockItem] deriving (Show, Eq)
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
 type Parser = [Token] -> Program
-
-debug :: c -> String -> c
-debug = flip trace
 
 parseAST :: Parser
 -- Program ::= FuncDeclaration
@@ -322,7 +318,7 @@ parseTermInternal _ [] = error "Invalid syntax in term"
 
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
-parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
+parseFactor (LiteralT (IntL value) : tokens) = (Constant (read value), tokens)
 parseFactor (LiteralT (IdentifierL identifier) : tokens) = (Variable identifier, tokens)
 parseFactor (OpenParenthesisT : tokens) = parseExpression tokens
 parseFactor (t : ts) =

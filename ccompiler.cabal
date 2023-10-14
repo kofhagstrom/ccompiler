@@ -27,7 +27,9 @@ library
   exposed-modules:
       Generator
       Lexer
+      LLVMGenerator
       Parser
+      ParserCombinator
   other-modules:
       Paths_ccompiler
   hs-source-dirs:

@@ -15,7 +15,9 @@ parse:
 assemble:
 	stack build
 	stack run $(cfile) assemble
-
+llvm:
+	stack build
+	stack run $(cfile) llvm
 make run:
 	stack build
 	stack run $(cfile) > test/compilation/assembly.s

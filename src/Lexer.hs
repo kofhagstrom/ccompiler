@@ -48,7 +48,7 @@ data Keyword
   deriving (Show, Eq)
 
 data Literal
-  = IntL Integer
+  = IntL String
   | StringL String
   | IdentifierL String
   deriving (Show, Eq)
@@ -171,7 +171,7 @@ lexLessThan string@(x : xs)
   | otherwise = LessThanT : lexRow string
 
 lexIntegerLiteral :: LexRow
-lexIntegerLiteral string = (LiteralT . IntL . read) prefix : lexRow suffix
+lexIntegerLiteral string = (LiteralT . IntL) prefix : lexRow suffix
   where
     (prefix, suffix) = span isAlphaNum string
 

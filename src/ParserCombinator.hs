@@ -15,36 +15,50 @@ import Lexer
     Token (..),
   )
 
--- Expression ::= Constant Integer | Variable String
+data UnaryOperator
+  = Negation
+  | LogicalNegation
+  | BitwiseComplement
+  deriving (Show, Eq)
+
+data BinaryOperator
+  = Addition
+  | Multiplication
+  | Division
+  deriving (Show, Eq)
+
+-- <exp> ::= <exp> <binary_op> <exp> | <unary_op> <exp> | "(" <exp> ")" | <int> | "var" <str>
 data Expression
-  = Constant Integer
+  = BinOp BinaryOperator Expression Expression
+  | UnOp UnaryOperator Expression
+  | Constant Integer
   | Variable String
   deriving (Show, Eq)
 
--- Statement ::= "return" Expression ";"
+-- <statement> ::= "return" <exp> ";"
 newtype Statement = Return Expression deriving (Show, Eq)
 
--- FuncDeclaration ::= "int" Identifier "(" ")" "{" Statement "}"
+-- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
 data FuncDeclaration = Fun String Statement deriving (Show, Eq)
 
--- Program ::= FuncDeclaration
+-- <program> ::= <function>
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
-data ParseError = UnexpectedError deriving (Show)
+data ParseError = Error String | UnexpectedError deriving (Show)
 
 newtype Parser a = Parser {runParser :: [Token] -> Either [ParseError] (a, [Token])}
 
 instance Functor Parser where
   fmap f p = Parser $ \input -> do
     (x, input') <- runParser p input
-    Right (f x, input')
+    return (f x, input')
 
 instance Applicative Parser where
   pure a = Parser $ \input -> Right (a, input)
   p1 <*> p2 = Parser $ \input -> do
     (f, input') <- runParser p1 input
     (a, input'') <- runParser p2 input'
-    Right (f a, input'')
+    return (f a, input'')
 
 instance Alternative Parser where
   empty = Parser $ \_ -> Left []
@@ -61,47 +75,83 @@ instance Monad Parser where
     (a, input') <- runParser p input
     runParser (f a) input'
 
-parseT :: Token -> Parser ()
+parseT :: Token -> Parser Token
 parseT t = Parser f
   where
     f (t' : ts)
-      | t' == t = Right ((), ts)
-      | otherwise = Left [UnexpectedError]
+      | t' == t = Right (t', ts)
+      | otherwise = Left [Error ("Expected " ++ show t ++ ", got " ++ show t')]
     f [] = Left [UnexpectedError]
 
-parseTs :: [Token] -> Parser [()]
+parseTs :: [Token] -> Parser [Token]
 parseTs = traverse parseT
 
-parseIdentifier :: Parser String
-parseIdentifier = Parser $ \case
+parseIdentifierLiteral :: Parser String
+parseIdentifierLiteral = Parser $ \case
   (LiteralT (IdentifierL identifier) : ts) -> Right (identifier, ts)
+  _ -> Left [UnexpectedError]
+
+parseIntLiteral :: Parser Integer
+parseIntLiteral = Parser $ \case
   (LiteralT (IntL value) : ts) -> Right (value, ts)
   _ -> Left [UnexpectedError]
 
+parseUnaryOperation :: Parser Expression
+parseUnaryOperation =
+  (parseTs [BangT] *> (UnOp LogicalNegation <$> parseExpression))
+    <|> (parseTs [MinusT] *> (UnOp Negation <$> parseExpression))
+    <|> (parseTs [TildeT] *> (UnOp LogicalNegation <$> parseExpression))
+
+parseBinaryOperation :: Parser Expression
+parseBinaryOperation = do
+  expr <- parseExpression
+  parseTs [AsteriskT]
+  BinOp Multiplication expr <$> parseExpression
+
+-- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int>
+parseFactor :: Parser Expression
+parseFactor =
+  (parseTs [OpenParenthesisT] *> parseExpression <* parseTs [CloseParenthesisT])
+    <|> parseUnaryOperation
+    <|> (Constant <$> parseIntLiteral)
+
+-- <term> ::= <factor> { ("*" | "/") <factor> }
+parseTerm :: Parser Expression
+parseTerm =
+  ( do
+      factor <- parseFactor
+      parseTs [AsteriskT]
+      BinOp Multiplication factor <$> parseFactor
+  )
+    <|> ( do
+            factor <- parseFactor
+            parseTs [DivisionT]
+            BinOp Division factor <$> parseFactor
+        )
+    <|> parseFactor
+
+-- parseFactor <* ((parseTs [AsteriskT] *> parseFactor) <|> (parseTs [DivisionT] *> parseFactor))
+
+-- <exp> ::= <term> { ("+" | "-") <term> }
 parseExpression :: Parser Expression
-parseExpression = parseConstantExpression <|> parseVariableExpression
+parseExpression = parseTerm
 
-parseConstantExpression :: Parser Expression
-parseConstantExpression = Constant . read <$> parseIdentifier
-
-parseVariableExpression :: Parser Expression
-parseVariableExpression = Variable <$> parseIdentifier
-
--- Statement ::= "return" Expression ";"
+-- <statement> ::= "return" <exp> ";"
 parseStatement :: Parser Statement
 parseStatement =
   parseTs [KeywordT ReturnKW]
     *> (Return <$> parseExpression <* parseTs [SemiColonT])
 
--- FuncDeclaration ::= "int" Identifier "(" ")" "{" Statement "}"
+-- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
 parseFuncDeclaration :: Parser FuncDeclaration
 parseFuncDeclaration = do
   parseTs [KeywordT IntKW]
-  identifier <- parseIdentifier
+  identifier <- parseIdentifierLiteral
   parseTs [OpenParenthesisT, CloseParenthesisT, OpenBraceT]
   func <- Fun identifier <$> parseStatement
   parseTs [CloseBraceT]
   return func
 
+-- <program> ::= <function>
 parseProgram :: Parser Program
 parseProgram = Program <$> parseFuncDeclaration

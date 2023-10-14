@@ -318,7 +318,7 @@ parseTermInternal _ [] = error "Invalid syntax in term"
 
 parseFactor :: [Token] -> (Expression, [Token])
 -- Factor ::= "(" Expression ")" | UnOp Factor | Constant Integer
-parseFactor (LiteralT (IntL value) : tokens) = (Constant (read value), tokens)
+parseFactor (LiteralT (IntL value) : tokens) = (Constant value, tokens)
 parseFactor (LiteralT (IdentifierL identifier) : tokens) = (Variable identifier, tokens)
 parseFactor (OpenParenthesisT : tokens) = parseExpression tokens
 parseFactor (t : ts) =

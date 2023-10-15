@@ -119,14 +119,28 @@ parseIntLiteral = Parser $ \case
 
 parseUnaryOperation :: Parser Expression
 parseUnaryOperation =
-  (parseTs [BangT] *> (UnOp LogicalNegation <$> parseFactor))
-    <|> (parseTs [MinusT] *> (UnOp Negation <$> parseFactor))
-    <|> (parseTs [TildeT] *> (UnOp BitwiseComplement <$> parseFactor))
+  ( do
+      parseTs [BangT]
+      UnOp LogicalNegation <$> parseFactor
+  )
+    <|> ( do
+            parseTs [MinusT]
+            UnOp Negation <$> parseFactor
+        )
+    <|> ( do
+            parseTs [TildeT]
+            UnOp BitwiseComplement <$> parseFactor
+        )
 
 -- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int>
 parseFactor :: Parser Expression
 parseFactor =
-  (parseTs [OpenParenthesisT] *> parseExpression <* parseTs [CloseParenthesisT])
+  ( do
+      parseTs [OpenParenthesisT]
+      expr <- parseExpression
+      parseTs [CloseParenthesisT]
+      return expr
+  )
     <|> parseUnaryOperation
     <|> (Constant <$> parseIntLiteral)
 
@@ -156,6 +170,7 @@ parseAdditiveExpression = do
   e1 <- parseTerm
   loop e1
   where
+    loop e = parseAdditionalTerm e <|> return e
     parseAdditionalTerm e = do
       t <- getNextToken
       e2 <- parseTerm
@@ -163,7 +178,6 @@ parseAdditiveExpression = do
         PlusT -> loop (BinOp Addition e e2)
         MinusT -> loop (BinOp Subtraction e e2)
         _ -> empty
-    loop e = parseAdditionalTerm e <|> return e
 
 -- <relational-exp> ::= <additive-exp> { ("<" | ">" | "<=" | ">=") <additive-exp> }
 parseRelationalExpression :: Parser Expression
@@ -171,6 +185,7 @@ parseRelationalExpression = do
   e1 <- parseAdditiveExpression
   loop e1
   where
+    loop e = parseAdditionalAdditiveExpression e <|> return e
     parseAdditionalAdditiveExpression e = do
       t <- getNextToken
       e2 <- parseAdditiveExpression
@@ -180,7 +195,6 @@ parseRelationalExpression = do
         LessThanOrEqualT -> loop (BinOp LessThanOrEqual e e2)
         GreaterThanOrEqualT -> loop (BinOp GreaterThanOrEqual e e2)
         _ -> empty
-    loop e = parseAdditionalAdditiveExpression e <|> return e
 
 -- <equality-exp> ::= <relational-exp> { ("!=" | "==") <relational-exp> }
 parseEqualityExpression :: Parser Expression
@@ -188,6 +202,7 @@ parseEqualityExpression = do
   e1 <- parseRelationalExpression
   loop e1
   where
+    loop e = parseAdditionalRelationalExpression e <|> return e
     parseAdditionalRelationalExpression e = do
       t <- getNextToken
       e2 <- parseRelationalExpression
@@ -195,7 +210,6 @@ parseEqualityExpression = do
         NotEqualT -> loop (BinOp Inequality e e2)
         LogicalEqualityT -> loop (BinOp Equality e e2)
         _ -> empty
-    loop e = parseAdditionalRelationalExpression e <|> return e
 
 -- <logical-and-exp> ::= <equality-exp> { "&&" <equality-exp> }
 parseLogicalAndExpression :: Parser Expression
@@ -203,13 +217,13 @@ parseLogicalAndExpression = do
   e1 <- parseEqualityExpression
   loop e1
   where
+    loop e = parseAdditionalEqualityExpression e <|> return e
     parseAdditionalEqualityExpression e = do
       t <- getNextToken
       e2 <- parseEqualityExpression
       case t of
         AndT -> loop (BinOp LogicalAnd e e2)
         _ -> empty
-    loop e = parseAdditionalEqualityExpression e <|> return e
 
 -- <exp> ::= <logical-and-exp> { "||" <logical-and-exp> }
 parseExpression :: Parser Expression
@@ -217,19 +231,21 @@ parseExpression = do
   e1 <- parseLogicalAndExpression
   loop e1
   where
+    loop e = parseAdditionalLogicalAndExpression e <|> return e
     parseAdditionalLogicalAndExpression e = do
       t <- getNextToken
       e2 <- parseLogicalAndExpression
       case t of
         OrT -> loop (BinOp LogicalOr e e2)
         _ -> empty
-    loop e = parseAdditionalLogicalAndExpression e <|> return e
 
 -- <statement> ::= "return" <exp> ";"
 parseStatement :: Parser Statement
-parseStatement =
+parseStatement = do
   parseTs [KeywordT ReturnKW]
-    *> ((Return <$> parseExpression) <* parseTs [SemiColonT])
+  expr <- Return <$> parseExpression
+  parseTs [SemiColonT]
+  return expr
 
 -- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
 parseFuncDeclaration :: Parser FuncDeclaration

@@ -2,7 +2,14 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
 module ParserCombinator
-  ( Parser,
+  ( Parser (..),
+    parseProgram,
+    Program (..),
+    FuncDeclaration (..),
+    Statement (..),
+    Expression (..),
+    UnaryOperator (..),
+    BinaryOperator (..),
   )
 where
 
@@ -26,6 +33,14 @@ data BinaryOperator
   | Multiplication
   | Division
   | Subtraction
+  | LessThan
+  | GreaterThan
+  | LessThanOrEqual
+  | GreaterThanOrEqual
+  | Equality
+  | Inequality
+  | LogicalAnd
+  | LogicalOr
   deriving (Show, Eq)
 
 data Expression
@@ -41,9 +56,15 @@ data FuncDeclaration = Fun String Statement deriving (Show, Eq)
 
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
-data ParseError = Error String | UnexpectedError deriving (Show)
+data ParseError
+  = UnexpectedTokenError Token Token
+  | UnexpectedError String
 
-newtype Parser a = Parser {runParser :: [Token] -> Either [ParseError] (a, [Token])}
+instance Show ParseError where
+  show (UnexpectedTokenError t1 t2) = "Expected " ++ show t1 ++ ", got " ++ show t2 ++ ".\n"
+  show (UnexpectedError msg) = msg ++ "\n"
+
+newtype Parser a = Parser {runParser :: [Token] -> Either ([ParseError], [Token]) (a, [Token])}
 
 instance Functor Parser where
   fmap f p = Parser $ \input -> do
@@ -58,13 +79,13 @@ instance Applicative Parser where
     return (f a, input'')
 
 instance Alternative Parser where
-  empty = Parser $ \_ -> Left []
+  empty = Parser $ \_ -> Left ([], [])
   p1 <|> p2 = Parser $ \input ->
     case runParser p1 input of
       Right a -> Right a
-      Left e -> case runParser p2 input of
+      Left (e, _) -> case runParser p2 input of
         Right a' -> Right a'
-        Left e' -> Left (e ++ e')
+        Left (e', ts') -> Left (e ++ e', ts')
 
 instance Monad Parser where
   return = pure
@@ -75,10 +96,11 @@ instance Monad Parser where
 parseT :: Token -> Parser Token
 parseT t = Parser f
   where
-    f (t' : ts)
-      | t' == t = Right (t', ts)
-      | otherwise = Left [Error ("Expected " ++ show t ++ ", got " ++ show t')]
-    f [] = Left [UnexpectedError]
+    f (t' : ts) =
+      if t' == t
+        then Right (t', ts)
+        else Left ([UnexpectedTokenError t t'], ts)
+    f [] = Left ([UnexpectedError ("Expected " ++ show t ++ ", got nothing.")], [])
 
 parseTs :: [Token] -> Parser [Token]
 parseTs = traverse parseT
@@ -86,24 +108,20 @@ parseTs = traverse parseT
 parseIdentifierLiteral :: Parser String
 parseIdentifierLiteral = Parser $ \case
   (LiteralT (IdentifierL identifier) : ts) -> Right (identifier, ts)
-  _ -> Left [UnexpectedError]
+  ts@(t : _) -> Left ([UnexpectedError ("Expected LiteralT (IdentifierL _), got " ++ show t)], ts)
+  [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
 parseIntLiteral :: Parser Integer
 parseIntLiteral = Parser $ \case
   (LiteralT (IntL value) : ts) -> Right (value, ts)
-  _ -> Left [UnexpectedError]
+  ts@(t : _) -> Left ([UnexpectedError ("Expected LiteralT (IntL _), got " ++ show t)], ts)
+  [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
 parseUnaryOperation :: Parser Expression
 parseUnaryOperation =
-  (parseTs [BangT] *> (UnOp LogicalNegation <$> parseExpression))
-    <|> (parseTs [MinusT] *> (UnOp Negation <$> parseExpression))
-    <|> (parseTs [TildeT] *> (UnOp LogicalNegation <$> parseExpression))
-
-parseBinaryOperation :: Parser Expression
-parseBinaryOperation = do
-  expr <- parseExpression
-  parseTs [AsteriskT]
-  BinOp Multiplication expr <$> parseExpression
+  (parseTs [BangT] *> (UnOp LogicalNegation <$> parseFactor))
+    <|> (parseTs [MinusT] *> (UnOp Negation <$> parseFactor))
+    <|> (parseTs [TildeT] *> (UnOp BitwiseComplement <$> parseFactor))
 
 -- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int>
 parseFactor :: Parser Expression
@@ -114,39 +132,104 @@ parseFactor =
 
 -- <term> ::= <factor> { ("*" | "/") <factor> }
 parseTerm :: Parser Expression
-parseTerm =
-  ( do
-      factor <- parseFactor
-      parseTs [AsteriskT]
-      BinOp Multiplication factor <$> parseFactor
-  )
-    <|> ( do
-            factor <- parseFactor
-            parseTs [DivisionT]
-            BinOp Division factor <$> parseFactor
-        )
-    <|> parseFactor
+parseTerm = do
+  e1 <- parseFactor
+  loop e1
+  where
+    parseAdditionalFactor e = do
+      t <- getNextToken
+      e2 <- parseFactor
+      case t of
+        AsteriskT -> loop (BinOp Multiplication e e2)
+        DivisionT -> loop (BinOp Division e e2)
+        _ -> empty
+    loop e = parseAdditionalFactor e <|> return e
 
--- <exp> ::= <term> { ("+" | "-") <term> }
+getNextToken :: Parser Token
+getNextToken = Parser $ \case
+  (t : ts) -> Right (t, ts)
+  _ -> Left ([UnexpectedError "Expected something, got nothing."], [])
+
+-- <additive-exp> ::= <term> { ("+" | "-") <term> }
+parseAdditiveExpression :: Parser Expression
+parseAdditiveExpression = do
+  e1 <- parseTerm
+  loop e1
+  where
+    parseAdditionalTerm e = do
+      t <- getNextToken
+      e2 <- parseTerm
+      case t of
+        PlusT -> loop (BinOp Addition e e2)
+        MinusT -> loop (BinOp Subtraction e e2)
+        _ -> empty
+    loop e = parseAdditionalTerm e <|> return e
+
+-- <relational-exp> ::= <additive-exp> { ("<" | ">" | "<=" | ">=") <additive-exp> }
+parseRelationalExpression :: Parser Expression
+parseRelationalExpression = do
+  e1 <- parseAdditiveExpression
+  loop e1
+  where
+    parseAdditionalAdditiveExpression e = do
+      t <- getNextToken
+      e2 <- parseAdditiveExpression
+      case t of
+        LessThanT -> loop (BinOp LessThan e e2)
+        GreaterThanT -> loop (BinOp GreaterThan e e2)
+        LessThanOrEqualT -> loop (BinOp LessThanOrEqual e e2)
+        GreaterThanOrEqualT -> loop (BinOp GreaterThanOrEqual e e2)
+        _ -> empty
+    loop e = parseAdditionalAdditiveExpression e <|> return e
+
+-- <equality-exp> ::= <relational-exp> { ("!=" | "==") <relational-exp> }
+parseEqualityExpression :: Parser Expression
+parseEqualityExpression = do
+  e1 <- parseRelationalExpression
+  loop e1
+  where
+    parseAdditionalRelationalExpression e = do
+      t <- getNextToken
+      e2 <- parseRelationalExpression
+      case t of
+        NotEqualT -> loop (BinOp Inequality e e2)
+        LogicalEqualityT -> loop (BinOp Equality e e2)
+        _ -> empty
+    loop e = parseAdditionalRelationalExpression e <|> return e
+
+-- <logical-and-exp> ::= <equality-exp> { "&&" <equality-exp> }
+parseLogicalAndExpression :: Parser Expression
+parseLogicalAndExpression = do
+  e1 <- parseEqualityExpression
+  loop e1
+  where
+    parseAdditionalEqualityExpression e = do
+      t <- getNextToken
+      e2 <- parseEqualityExpression
+      case t of
+        AndT -> loop (BinOp LogicalAnd e e2)
+        _ -> empty
+    loop e = parseAdditionalEqualityExpression e <|> return e
+
+-- <exp> ::= <logical-and-exp> { "||" <logical-and-exp> }
 parseExpression :: Parser Expression
-parseExpression =
-  ( do
-      factor <- parseTerm
-      parseTs [PlusT]
-      BinOp Addition factor <$> parseTerm
-  )
-    <|> ( do
-            factor <- parseTerm
-            parseTs [MinusT]
-            BinOp Subtraction factor <$> parseTerm
-        )
-    <|> parseTerm
+parseExpression = do
+  e1 <- parseLogicalAndExpression
+  loop e1
+  where
+    parseAdditionalLogicalAndExpression e = do
+      t <- getNextToken
+      e2 <- parseLogicalAndExpression
+      case t of
+        OrT -> loop (BinOp LogicalOr e e2)
+        _ -> empty
+    loop e = parseAdditionalLogicalAndExpression e <|> return e
 
 -- <statement> ::= "return" <exp> ";"
 parseStatement :: Parser Statement
 parseStatement =
   parseTs [KeywordT ReturnKW]
-    *> (Return <$> parseExpression <* parseTs [SemiColonT])
+    *> ((Return <$> parseExpression) <* parseTs [SemiColonT])
 
 -- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
 parseFuncDeclaration :: Parser FuncDeclaration

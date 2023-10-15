@@ -58,6 +58,7 @@ test-suite ccompiler-test
   main-is: Spec.hs
   other-modules:
       LexerSpec
+      ParserCombinatorSpec
       ParserSpec
       Paths_ccompiler
   hs-source-dirs:

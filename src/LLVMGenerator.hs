@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module LLVMGenerator (generateLLVMIR) where
 
 import Parser
@@ -43,18 +44,18 @@ instance Show Arg where
   show (ConstantArg value) = show value
   show (Register name) = printf "%%%s" name
 
-generateLLVMIR :: Program -> LLVMProgram
+generateLLVMIR :: Parser.Program -> LLVMProgram
 generateLLVMIR
-  ( Program
+  ( Parser.Program
       function
     ) =
     LLVMProgram [generateLLVMFunction function]
 
-generateLLVMFunction :: FuncDeclaration -> LLVMFunction
+generateLLVMFunction :: Parser.FuncDeclaration -> LLVMFunction
 generateLLVMFunction
-  ( Fun
+  ( Parser.Fun
       funcName
-      [ State (Return statement)
+      [ Parser.State (Parser.Return statement)
         ]
     ) =
     LLVMFunction
@@ -62,14 +63,14 @@ generateLLVMFunction
       $ generateLLVMInstructions statement
 generateLLVMFunction _ = error "Invalid function"
 
-generateLLVMInstructions :: Expression -> [Instruction]
-generateLLVMInstructions (Constant value) =
+generateLLVMInstructions :: Parser.Expression -> [Instruction]
+generateLLVMInstructions (Parser.Constant value) =
   [Instruction $ Ret (ConstantArg value)]
-generateLLVMInstructions (BinOp Addition (Constant c1) (Constant c2)) =
+generateLLVMInstructions (Parser.BinOp Parser.Addition (Parser.Constant c1) (Parser.Constant c2)) =
   [ Instruction $ Add (Register "1") (ConstantArg c1) (ConstantArg c2)
   ]
 generateLLVMInstructions
-  (BinOp Addition expr (Constant c3)) =
+  (Parser.BinOp Parser.Addition expr (Parser.Constant c3)) =
     generateLLVMInstructions expr
       ++ [ Instruction $ Add (Register "2") (Register "1") (ConstantArg c3),
            Instruction $ Ret (Register "2")

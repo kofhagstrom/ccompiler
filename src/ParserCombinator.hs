@@ -10,14 +10,17 @@ module ParserCombinator
     Expression (..),
     UnaryOperator (..),
     BinaryOperator (..),
+    BlockItem (..),
+    Declaration (..),
   )
 where
 
 import Control.Applicative
   ( Alternative (empty, (<|>)),
+    many,
   )
 import LexerCombinator
-  ( Keyword (IntKW, ReturnKW),
+  ( Keyword (ElseKW, IfKW, IntKW, ReturnKW),
     Literal (IdentifierL, IntL),
     Token (..),
   )
@@ -45,15 +48,25 @@ data BinaryOperator
   deriving (Show, Eq)
 
 data Expression
-  = BinOp BinaryOperator Expression Expression
-  | UnOp UnaryOperator Expression
+  = BinaryOperator BinaryOperator Expression Expression
+  | UnaryOperator UnaryOperator Expression
   | Constant Integer
   | Variable String
+  | Assign String Expression
+  | ConditionalExpression Expression Expression Expression
   deriving (Show, Eq)
 
-newtype Statement = Return Expression deriving (Show, Eq)
+data Statement
+  = Return Expression
+  | Expression Expression
+  | Conditional Expression Statement (Maybe Statement)
+  deriving (Show, Eq)
 
-data FuncDeclaration = Fun String Statement deriving (Show, Eq)
+data Declaration = Declare String (Maybe Expression) deriving (Show, Eq)
+
+data BlockItem = State Statement | Declaration Declaration deriving (Show, Eq)
+
+data FuncDeclaration = Fun String [BlockItem] deriving (Show, Eq)
 
 newtype Program = Program FuncDeclaration deriving (Show, Eq)
 
@@ -66,6 +79,11 @@ instance Show ParseError where
   show (UnexpectedError msg) = msg ++ "\n"
 
 type ASTParser a = Parser Token ParseError a
+
+getNextToken :: ASTParser Token
+getNextToken = Parser $ \case
+  (t : ts) -> Right (t, ts)
+  _ -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
 parseToken :: Token -> ASTParser Token
 parseToken t = Parser f
@@ -80,19 +98,10 @@ tryParseTokens :: [Token] -> ASTParser Token
 tryParseTokens =
   foldr
     ((<|>) . parseToken)
-    ( Parser
-        ( \_ ->
-            Left ([UnexpectedError "Tried to parse on empty input"], [])
-        )
-    )
+    (Parser $ \inp -> Left ([UnexpectedError "Tried to parse on empty input"], inp))
 
 parseTokens :: [Token] -> ASTParser [Token]
 parseTokens = traverse parseToken
-
-getNextToken :: ASTParser Token
-getNextToken = Parser $ \case
-  (t : ts) -> Right (t, ts)
-  _ -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
 parseIdentifierLiteral :: ASTParser String
 parseIdentifierLiteral = Parser $ \case
@@ -110,12 +119,12 @@ parseUnaryOperation :: ASTParser Expression
 parseUnaryOperation = do
   t <- tryParseTokens [BangT, MinusT, TildeT]
   case t of
-    BangT -> UnOp LogicalNegation <$> parseFactor
-    MinusT -> UnOp Negation <$> parseFactor
-    TildeT -> UnOp BitwiseComplement <$> parseFactor
+    BangT -> UnaryOperator LogicalNegation <$> parseFactor
+    MinusT -> UnaryOperator Negation <$> parseFactor
+    TildeT -> UnaryOperator BitwiseComplement <$> parseFactor
     _ -> empty
 
--- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int>
+-- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int> | <id>
 parseFactor :: ASTParser Expression
 parseFactor =
   ( do
@@ -126,6 +135,7 @@ parseFactor =
   )
     <|> parseUnaryOperation
     <|> (Constant <$> parseIntLiteral)
+    <|> (Variable <$> parseIdentifierLiteral)
 
 -- <term> ::= <factor> { ("*" | "/") <factor> }
 parseTerm :: ASTParser Expression
@@ -138,8 +148,8 @@ parseTerm = do
           t <- getNextToken
           e2 <- parseFactor
           case t of
-            AsteriskT -> loop (BinOp Multiplication e e2)
-            DivisionT -> loop (BinOp Division e e2)
+            AsteriskT -> loop (BinaryOperator Multiplication e e2)
+            DivisionT -> loop (BinaryOperator Division e e2)
             _ -> empty
       )
         <|> return e
@@ -155,8 +165,8 @@ parseAdditiveExpression = do
           t <- getNextToken
           e2 <- parseTerm
           case t of
-            PlusT -> loop (BinOp Addition e e2)
-            MinusT -> loop (BinOp Subtraction e e2)
+            PlusT -> loop (BinaryOperator Addition e e2)
+            MinusT -> loop (BinaryOperator Subtraction e e2)
             _ -> empty
       )
         <|> return e
@@ -172,10 +182,10 @@ parseRelationalExpression = do
           t <- getNextToken
           e2 <- parseAdditiveExpression
           case t of
-            LessThanT -> loop (BinOp LessThan e e2)
-            GreaterThanT -> loop (BinOp GreaterThan e e2)
-            LessThanOrEqualT -> loop (BinOp LessThanOrEqual e e2)
-            GreaterThanOrEqualT -> loop (BinOp GreaterThanOrEqual e e2)
+            LessThanT -> loop (BinaryOperator LessThan e e2)
+            GreaterThanT -> loop (BinaryOperator GreaterThan e e2)
+            LessThanOrEqualT -> loop (BinaryOperator LessThanOrEqual e e2)
+            GreaterThanOrEqualT -> loop (BinaryOperator GreaterThanOrEqual e e2)
             _ -> empty
       )
         <|> return e
@@ -191,8 +201,8 @@ parseEqualityExpression = do
           t <- getNextToken
           e2 <- parseRelationalExpression
           case t of
-            NotEqualT -> loop (BinOp Inequality e e2)
-            LogicalEqualityT -> loop (BinOp Equality e e2)
+            NotEqualT -> loop (BinaryOperator Inequality e e2)
+            LogicalEqualityT -> loop (BinaryOperator Equality e e2)
             _ -> empty
       )
         <|> return e
@@ -208,14 +218,14 @@ parseLogicalAndExpression = do
           t <- getNextToken
           e2 <- parseEqualityExpression
           case t of
-            AndT -> loop (BinOp LogicalAnd e e2)
+            AndT -> loop (BinaryOperator LogicalAnd e e2)
             _ -> empty
       )
         <|> return e
 
--- <exp> ::= <logical-and-exp> { "||" <logical-and-exp> }
-parseExpression :: ASTParser Expression
-parseExpression = do
+-- <logical-or-exp> ::= <logical-and-exp> { "||" <logical-and-exp> }
+parseLogicalOrExpression :: ASTParser Expression
+parseLogicalOrExpression = do
   e1 <- parseLogicalAndExpression
   loop e1
   where
@@ -224,26 +234,98 @@ parseExpression = do
           t <- getNextToken
           e2 <- parseLogicalAndExpression
           case t of
-            OrT -> loop (BinOp LogicalOr e e2)
+            OrT -> loop (BinaryOperator LogicalOr e e2)
             _ -> empty
       )
         <|> return e
 
--- <statement> ::= "return" <exp> ";"
-parseStatement :: ASTParser Statement
-parseStatement = do
-  parseTokens [KeywordT ReturnKW]
-  expr <- Return <$> parseExpression
-  parseTokens [SemiColonT]
-  return expr
+-- <conditional-exp> ::= <logical-or-exp> [ "?" <exp> ":" <conditional-exp> ]
+parseConditionalExpression :: ASTParser Expression
+parseConditionalExpression =
+  ( do
+      expr <- parseLogicalOrExpression
+      parseTokens [QuestionMarkT]
+      expr' <- parseExpression
+      parseTokens [ColonT]
+      expr'' <- parseConditionalExpression
+      return (ConditionalExpression expr expr' expr'')
+  )
+    <|> parseLogicalOrExpression
 
--- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
+-- <exp> ::= <id> "=" <exp> | <logical-or-exp>
+parseExpression :: ASTParser Expression
+parseExpression =
+  ( do
+      identifier <- parseIdentifierLiteral
+      parseTokens [AssignmentT]
+      expr <- parseExpression
+      return (Assign identifier expr)
+  )
+    <|> parseConditionalExpression
+
+-- <statement> ::= "return" <exp> ";"
+--                | <exp> ";"
+--                | "int" <id> [ = <exp>] ";"
+--                | "if" "(" <exp> ")" <statement> [ "else" <statement> ]
+parseStatement :: ASTParser Statement
+parseStatement =
+  ( do
+      parseTokens [KeywordT ReturnKW]
+      expr <- Return <$> parseExpression
+      parseTokens [SemiColonT]
+      return expr
+  )
+    <|> ( do
+            expr <- Expression <$> parseExpression
+            parseTokens [SemiColonT]
+            return expr
+        )
+    <|> ( do
+            parseTokens [KeywordT IfKW, OpenParenthesisT]
+            expr <- parseExpression
+            parseTokens [CloseParenthesisT]
+            stmt <- parseStatement
+            parseTokens [KeywordT ElseKW]
+            stmt' <- parseStatement
+            return (Conditional expr stmt (Just stmt'))
+        )
+    <|> ( do
+            parseTokens [KeywordT IfKW, OpenParenthesisT]
+            expr <- parseExpression
+            parseTokens [CloseParenthesisT]
+            stmt <- parseStatement
+            return (Conditional expr stmt Nothing)
+        )
+
+-- <declaration> ::= "int" <id> [ = <exp> ] ";"
+parseDeclaration :: ASTParser Declaration
+parseDeclaration =
+  ( do
+      parseTokens [KeywordT IntKW]
+      identifier <- Declare <$> parseIdentifierLiteral
+      parseTokens [AssignmentT]
+      expr <- parseExpression
+      parseTokens [SemiColonT]
+      return (identifier (Just expr))
+  )
+    <|> ( do
+            parseTokens [KeywordT IntKW]
+            identifier <- Declare <$> parseIdentifierLiteral
+            parseTokens [SemiColonT]
+            return (identifier Nothing)
+        )
+
+-- <block-item> ::= <statement> | <declaration>
+parseBlockItem :: ASTParser BlockItem
+parseBlockItem = (State <$> parseStatement) <|> (Declaration <$> parseDeclaration)
+
+-- <function> ::= "int" <id> "(" ")" "{" { <block-item> } "}"
 parseFuncDeclaration :: ASTParser FuncDeclaration
 parseFuncDeclaration = do
   parseTokens [KeywordT IntKW]
   identifier <- parseIdentifierLiteral
   parseTokens [OpenParenthesisT, CloseParenthesisT, OpenBraceT]
-  func <- Fun identifier <$> parseStatement
+  func <- Fun identifier <$> many parseBlockItem
   parseTokens [CloseBraceT]
   return func
 

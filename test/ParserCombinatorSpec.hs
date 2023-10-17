@@ -15,8 +15,8 @@ import ParserCombinator
 import Test.Hspec
 
 parseHelper :: String -> Program
-parseHelper string = case runLexer lexFile string of
-  Right (tokens, _) -> case (runParser parseProgram tokens) of
+parseHelper string = case run lexFile string of
+  Right (tokens, _) -> case (run parseProgram tokens) of
     Right (ast, _) -> ast
     Left (es, ts) -> error ((concat $ show <$> es) ++ "Remaining tokens: " ++ (intercalate ", " $ show <$> ts))
   Left (e, _) -> error ((concat $ show <$> e))

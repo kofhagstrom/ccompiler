@@ -1,10 +1,11 @@
 module LexerCombinatorSpec (spec) where
 
 import LexerCombinator
+import Parser
 import Test.Hspec
 
 lexHelper :: String -> [Token]
-lexHelper str = case runLexer lexFile str of
+lexHelper str = case run lexFile str of
   Right (ts, _) -> ts
   Left e -> error (concat $ show <$> e)
 

@@ -65,7 +65,7 @@ instance Show ParseError where
   show (UnexpectedTokenError t1 t2) = "Expected " ++ show t1 ++ ", got " ++ show t2 ++ ".\n"
   show (UnexpectedError msg) = msg ++ "\n"
 
-type ASTParser x = Parser Token ParseError x
+type ASTParser a = Parser Token ParseError a
 
 parseToken :: Token -> ASTParser Token
 parseToken t = Parser f
@@ -86,8 +86,8 @@ tryParseTokens =
         )
     )
 
-parseManyTokens :: [Token] -> ASTParser [Token]
-parseManyTokens = traverse parseToken
+parseTokens :: [Token] -> ASTParser [Token]
+parseTokens = traverse parseToken
 
 getNextToken :: ASTParser Token
 getNextToken = Parser $ \case
@@ -119,9 +119,9 @@ parseUnaryOperation = do
 parseFactor :: ASTParser Expression
 parseFactor =
   ( do
-      parseManyTokens [OpenParenthesisT]
+      parseTokens [OpenParenthesisT]
       expr <- parseExpression
-      parseManyTokens [CloseParenthesisT]
+      parseTokens [CloseParenthesisT]
       return expr
   )
     <|> parseUnaryOperation
@@ -232,19 +232,19 @@ parseExpression = do
 -- <statement> ::= "return" <exp> ";"
 parseStatement :: ASTParser Statement
 parseStatement = do
-  parseManyTokens [KeywordT ReturnKW]
+  parseTokens [KeywordT ReturnKW]
   expr <- Return <$> parseExpression
-  parseManyTokens [SemiColonT]
+  parseTokens [SemiColonT]
   return expr
 
 -- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
 parseFuncDeclaration :: ASTParser FuncDeclaration
 parseFuncDeclaration = do
-  parseManyTokens [KeywordT IntKW]
+  parseTokens [KeywordT IntKW]
   identifier <- parseIdentifierLiteral
-  parseManyTokens [OpenParenthesisT, CloseParenthesisT, OpenBraceT]
+  parseTokens [OpenParenthesisT, CloseParenthesisT, OpenBraceT]
   func <- Fun identifier <$> parseStatement
-  parseManyTokens [CloseBraceT]
+  parseTokens [CloseBraceT]
   return func
 
 -- <program> ::= <function>

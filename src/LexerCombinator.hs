@@ -2,13 +2,11 @@
 {-# OPTIONS_GHC -Wno-unused-do-bind #-}
 
 module LexerCombinator
-  ( Lexer (..),
-    Keyword (..),
+  ( Keyword (..),
     Token (..),
     Literal (..),
     lexNextToken,
     lexFile,
-    runLexer,
   )
 where
 
@@ -131,18 +129,12 @@ lexLiteralT =
        )
     <* ws
 
+lexNonLiterals :: [(String, Token)] -> Parser Char LexError Token
+lexNonLiterals ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiterals rest
+lexNonLiterals [] = empty
+
 lexNextToken :: Lexer Token
-lexNextToken = (ws *> (f stringToToken) <* ws) <|> lexLiteralT
-  where
-    f ((str, t) : rest) =
-      (lexString str >> return t)
-        <|> f rest
-    f [] = empty
+lexNextToken = (ws *> lexNonLiterals stringToToken <* ws) <|> lexLiteralT
 
 lexFile :: Lexer [Token]
-lexFile =
-  many
-    lexNextToken
-
-runLexer :: Parser a e x -> [a] -> Either ([e], [a]) (x, [a])
-runLexer = runParser
+lexFile = many lexNextToken

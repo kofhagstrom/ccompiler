@@ -13,6 +13,7 @@ where
 import Control.Applicative (Alternative (empty, (<|>)), many)
 import Data.Char (isAlpha, isDigit)
 import Parser
+import Text.Read (readEither)
 
 data Token
   = OpenBraceT
@@ -67,6 +68,7 @@ stringToToken =
     ("else", KeywordT ElseKW),
     ("return", KeywordT ReturnKW),
     ("==", LogicalEqualityT),
+    ("=", AssignmentT),
     ("!=", NotEqualT),
     ("!", BangT),
     ("<=", LessThanOrEqualT),
@@ -75,7 +77,6 @@ stringToToken =
     (">", GreaterThanT),
     ("&&", AndT),
     ("||", OrT),
-    ("=", AssignmentT),
     ("(", OpenParenthesisT),
     (")", CloseParenthesisT),
     ("{", OpenBraceT),
@@ -124,7 +125,9 @@ lexLiteralT =
            <|> Parser
              ( \input -> case span isDigit input of
                  ("", rest) -> Left ([], rest)
-                 (str, rest) -> Right (LiteralT (IntL (read str)), rest)
+                 (str, rest) -> case readEither str of
+                   Right i -> Right (LiteralT (IntL i), rest)
+                   Left _ -> Left ([UnexpectedError], rest)
              )
        )
     <* ws

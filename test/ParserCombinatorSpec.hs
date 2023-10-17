@@ -1,7 +1,7 @@
 module ParserCombinatorSpec (spec) where
 
 import Data.List (intercalate)
-import Lexer (lexChars)
+import LexerCombinator
 import ParserCombinator
   ( BinaryOperator (..),
     Expression (..),
@@ -15,11 +15,11 @@ import ParserCombinator
 import Test.Hspec
 
 parseHelper :: String -> Program
-parseHelper string = case lexChars $ lines string of
-  Right tokens -> case (runParser parseProgram tokens) of
+parseHelper string = case runLexer lexFile string of
+  Right (tokens, _) -> case (runParser parseProgram tokens) of
     Right (ast, _) -> ast
     Left (es, ts) -> error ((concat $ show <$> es) ++ "Remaining tokens: " ++ (intercalate ", " $ show <$> ts))
-  Left e -> error e
+  Left (e, _) -> error ((concat $ show <$> e))
 
 spec :: Spec
 spec = do

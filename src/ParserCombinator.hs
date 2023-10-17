@@ -16,7 +16,7 @@ where
 import Control.Applicative
   ( Alternative (empty, (<|>)),
   )
-import Lexer
+import LexerCombinator
   ( Keyword (IntKW, ReturnKW),
     Literal (IdentifierL, IntL),
     Token (..),

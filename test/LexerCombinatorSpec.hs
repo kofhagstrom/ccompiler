@@ -1,9 +1,9 @@
 module LexerCombinatorSpec (spec) where
 
-import Control.Applicative (many)
 import LexerCombinator
 import Test.Hspec
 
+lexHelper :: String -> [Token]
 lexHelper str = case runLexer lexFile str of
   Right (ts, _) -> ts
   Left e -> error (concat $ show <$> e)

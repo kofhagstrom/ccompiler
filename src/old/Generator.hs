@@ -1,6 +1,6 @@
 module Generator (generateAssembly) where
 
-import Parser
+import ParserCombinator
 
 newtype AssemblyProgram = AssemblyProgram [AssemblyFunction]
 

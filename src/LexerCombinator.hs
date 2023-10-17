@@ -8,15 +8,16 @@ module LexerCombinator
     Literal (..),
     lexNextToken,
     lexFile,
+    runLexer,
   )
 where
 
 import Control.Applicative (Alternative (empty, (<|>)), many)
 import Data.Char (isAlpha, isDigit)
+import Parser
 
 data Token
-  = EOF
-  | OpenBraceT
+  = OpenBraceT
   | CloseBraceT
   | OpenParenthesisT
   | CloseParenthesisT
@@ -59,34 +60,7 @@ data Literal
 
 data LexError = UnexpectedError deriving (Show)
 
-newtype Lexer a = Lexer {runLexer :: String -> Either ([LexError], String) (a, String)}
-
-instance Functor Lexer where
-  fmap f p = Lexer $ \input -> do
-    (x, input') <- runLexer p input
-    return (f x, input')
-
-instance Applicative Lexer where
-  pure a = Lexer $ \input -> Right (a, input)
-  p1 <*> p2 = Lexer $ \input -> do
-    (f, input') <- runLexer p1 input
-    (a, input'') <- runLexer p2 input'
-    return (f a, input'')
-
-instance Alternative Lexer where
-  empty = Lexer $ \_ -> Left ([UnexpectedError], [])
-  p1 <|> p2 = Lexer $ \input ->
-    case runLexer p1 input of
-      Right a -> Right a
-      Left (e, _) -> case runLexer p2 input of
-        Right a' -> Right a'
-        Left (e', ts') -> Left (e <> e', ts')
-
-instance Monad Lexer where
-  return = pure
-  p >>= f = Lexer $ \input -> do
-    (a, input') <- runLexer p input
-    runLexer (f a) input'
+type Lexer a = Parser Char LexError a
 
 stringToToken :: [(String, Token)]
 stringToToken =
@@ -119,7 +93,7 @@ stringToToken =
   ]
 
 spanL :: (Char -> Bool) -> Lexer String
-spanL f = Lexer $ \input ->
+spanL f = Parser $ \input ->
   let (str, rest) = span f input
    in Right (str, rest)
 
@@ -127,7 +101,7 @@ ws :: Lexer String
 ws = spanL (== ' ')
 
 lexChar :: Char -> Lexer Char
-lexChar t = Lexer f
+lexChar t = Parser f
   where
     f (c : str) =
       if c == t
@@ -139,19 +113,17 @@ lexString :: String -> Lexer String
 lexString = traverse lexChar
 
 isAllowedLiteralChar :: Char -> Bool
-isAllowedLiteralChar c = case c of
-  '_' -> True
-  _ -> isAlpha c
+isAllowedLiteralChar c = isAlpha c || c == '_'
 
 lexLiteralT :: Lexer Token
 lexLiteralT =
   ws
-    *> ( Lexer
+    *> ( Parser
            ( \input -> case span isAllowedLiteralChar input of
                ("", rest) -> Left ([], rest)
                (str, rest) -> Right (LiteralT (IdentifierL str), rest)
            )
-           <|> Lexer
+           <|> Parser
              ( \input -> case span isDigit input of
                  ("", rest) -> Left ([], rest)
                  (str, rest) -> Right (LiteralT (IntL (read str)), rest)
@@ -168,4 +140,9 @@ lexNextToken = (ws *> (f stringToToken) <* ws) <|> lexLiteralT
     f [] = empty
 
 lexFile :: Lexer [Token]
-lexFile = many lexNextToken
+lexFile =
+  many
+    lexNextToken
+
+runLexer :: Parser a e x -> [a] -> Either ([e], [a]) (x, [a])
+runLexer = runParser

@@ -25,10 +25,7 @@ source-repository head
 
 library
   exposed-modules:
-      Generator
-      Lexer
       LexerCombinator
-      LLVMGenerator
       Parser
       ParserCombinator
   other-modules:
@@ -59,9 +56,7 @@ test-suite ccompiler-test
   main-is: Spec.hs
   other-modules:
       LexerCombinatorSpec
-      LexerSpec
       ParserCombinatorSpec
-      ParserSpec
       Paths_ccompiler
   hs-source-dirs:
       test

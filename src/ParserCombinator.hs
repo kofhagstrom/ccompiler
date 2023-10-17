@@ -21,6 +21,7 @@ import LexerCombinator
     Literal (IdentifierL, IntL),
     Token (..),
   )
+import Parser
 
 data UnaryOperator
   = Negation
@@ -64,36 +65,9 @@ instance Show ParseError where
   show (UnexpectedTokenError t1 t2) = "Expected " ++ show t1 ++ ", got " ++ show t2 ++ ".\n"
   show (UnexpectedError msg) = msg ++ "\n"
 
-newtype Parser a = Parser {runParser :: [Token] -> Either ([ParseError], [Token]) (a, [Token])}
+type ASTParser x = Parser Token ParseError x
 
-instance Functor Parser where
-  fmap f p = Parser $ \input -> do
-    (x, input') <- runParser p input
-    return (f x, input')
-
-instance Applicative Parser where
-  pure a = Parser $ \input -> Right (a, input)
-  p1 <*> p2 = Parser $ \input -> do
-    (f, input') <- runParser p1 input
-    (a, input'') <- runParser p2 input'
-    return (f a, input'')
-
-instance Alternative Parser where
-  empty = Parser $ \_ -> Left ([], [])
-  p1 <|> p2 = Parser $ \input ->
-    case runParser p1 input of
-      Right a -> Right a
-      Left (e, _) -> case runParser p2 input of
-        Right a' -> Right a'
-        Left (e', ts') -> Left (e ++ e', ts')
-
-instance Monad Parser where
-  return = pure
-  p >>= f = Parser $ \input -> do
-    (a, input') <- runParser p input
-    runParser (f a) input'
-
-parseToken :: Token -> Parser Token
+parseToken :: Token -> ASTParser Token
 parseToken t = Parser f
   where
     f (t' : ts) =
@@ -102,7 +76,7 @@ parseToken t = Parser f
         else Left ([UnexpectedTokenError t t'], ts)
     f [] = Left ([UnexpectedError ("Expected " ++ show t ++ ", got nothing.")], [])
 
-tryParseTokens :: [Token] -> Parser Token
+tryParseTokens :: [Token] -> ASTParser Token
 tryParseTokens =
   foldr
     ((<|>) . parseToken)
@@ -112,27 +86,27 @@ tryParseTokens =
         )
     )
 
-parseManyTokens :: [Token] -> Parser [Token]
+parseManyTokens :: [Token] -> ASTParser [Token]
 parseManyTokens = traverse parseToken
 
-getNextToken :: Parser Token
+getNextToken :: ASTParser Token
 getNextToken = Parser $ \case
   (t : ts) -> Right (t, ts)
   _ -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
-parseIdentifierLiteral :: Parser String
+parseIdentifierLiteral :: ASTParser String
 parseIdentifierLiteral = Parser $ \case
   (LiteralT (IdentifierL identifier) : ts) -> Right (identifier, ts)
   ts@(t : _) -> Left ([UnexpectedError ("Expected LiteralT (IdentifierL _), got " ++ show t)], ts)
   [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
-parseIntLiteral :: Parser Integer
+parseIntLiteral :: ASTParser Integer
 parseIntLiteral = Parser $ \case
   (LiteralT (IntL value) : ts) -> Right (value, ts)
   ts@(t : _) -> Left ([UnexpectedError ("Expected LiteralT (IntL _), got " ++ show t)], ts)
   [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
-parseUnaryOperation :: Parser Expression
+parseUnaryOperation :: ASTParser Expression
 parseUnaryOperation = do
   t <- tryParseTokens [BangT, MinusT, TildeT]
   case t of
@@ -142,7 +116,7 @@ parseUnaryOperation = do
     _ -> empty
 
 -- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int>
-parseFactor :: Parser Expression
+parseFactor :: ASTParser Expression
 parseFactor =
   ( do
       parseManyTokens [OpenParenthesisT]
@@ -154,7 +128,7 @@ parseFactor =
     <|> (Constant <$> parseIntLiteral)
 
 -- <term> ::= <factor> { ("*" | "/") <factor> }
-parseTerm :: Parser Expression
+parseTerm :: ASTParser Expression
 parseTerm = do
   e1 <- parseFactor
   loop e1
@@ -171,7 +145,7 @@ parseTerm = do
         <|> return e
 
 -- <additive-exp> ::= <term> { ("+" | "-") <term> }
-parseAdditiveExpression :: Parser Expression
+parseAdditiveExpression :: ASTParser Expression
 parseAdditiveExpression = do
   e1 <- parseTerm
   loop e1
@@ -188,7 +162,7 @@ parseAdditiveExpression = do
         <|> return e
 
 -- <relational-exp> ::= <additive-exp> { ("<" | ">" | "<=" | ">=") <additive-exp> }
-parseRelationalExpression :: Parser Expression
+parseRelationalExpression :: ASTParser Expression
 parseRelationalExpression = do
   e1 <- parseAdditiveExpression
   loop e1
@@ -207,7 +181,7 @@ parseRelationalExpression = do
         <|> return e
 
 -- <equality-exp> ::= <relational-exp> { ("!=" | "==") <relational-exp> }
-parseEqualityExpression :: Parser Expression
+parseEqualityExpression :: ASTParser Expression
 parseEqualityExpression = do
   e1 <- parseRelationalExpression
   loop e1
@@ -224,7 +198,7 @@ parseEqualityExpression = do
         <|> return e
 
 -- <logical-and-exp> ::= <equality-exp> { "&&" <equality-exp> }
-parseLogicalAndExpression :: Parser Expression
+parseLogicalAndExpression :: ASTParser Expression
 parseLogicalAndExpression = do
   e1 <- parseEqualityExpression
   loop e1
@@ -240,7 +214,7 @@ parseLogicalAndExpression = do
         <|> return e
 
 -- <exp> ::= <logical-and-exp> { "||" <logical-and-exp> }
-parseExpression :: Parser Expression
+parseExpression :: ASTParser Expression
 parseExpression = do
   e1 <- parseLogicalAndExpression
   loop e1
@@ -256,7 +230,7 @@ parseExpression = do
         <|> return e
 
 -- <statement> ::= "return" <exp> ";"
-parseStatement :: Parser Statement
+parseStatement :: ASTParser Statement
 parseStatement = do
   parseManyTokens [KeywordT ReturnKW]
   expr <- Return <$> parseExpression
@@ -264,7 +238,7 @@ parseStatement = do
   return expr
 
 -- <function> ::= "int" <id> "(" ")" "{" <statement> "}"
-parseFuncDeclaration :: Parser FuncDeclaration
+parseFuncDeclaration :: ASTParser FuncDeclaration
 parseFuncDeclaration = do
   parseManyTokens [KeywordT IntKW]
   identifier <- parseIdentifierLiteral
@@ -274,5 +248,5 @@ parseFuncDeclaration = do
   return func
 
 -- <program> ::= <function>
-parseProgram :: Parser Program
+parseProgram :: ASTParser Program
 parseProgram = Program <$> parseFuncDeclaration

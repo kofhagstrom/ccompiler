@@ -112,32 +112,38 @@ lexString :: String -> Lexer String
 lexString = traverse lexChar
 
 isAllowedLiteralChar :: Char -> Bool
-isAllowedLiteralChar c = isAlpha c || c == '_'
+isAllowedLiteralChar c = isAlpha c || isIn c "_"
+  where
+    isIn c' (l : ls) = if l == c' then True else isIn c' ls
+    isIn _ [] = False
 
-lexLiteralT :: Lexer Token
-lexLiteralT =
-  ws
-    *> ( Parser
-           ( \input -> case span isAllowedLiteralChar input of
-               ("", rest) -> Left ([], rest)
-               (str, rest) -> Right (LiteralT (IdentifierL str), rest)
-           )
-           <|> Parser
-             ( \input -> case span isDigit input of
-                 ("", rest) -> Left ([], rest)
-                 (str, rest) -> case readEither str of
-                   Right i -> Right (LiteralT (IntL i), rest)
-                   Left _ -> Left ([UnexpectedError], rest)
-             )
-       )
-    <* ws
+lexStringLiteral :: Lexer Token
+lexStringLiteral =
+  Parser
+    ( \input -> case span isAllowedLiteralChar input of
+        ("", rest) -> Left ([], rest)
+        (str, rest) -> Right (LiteralT (IdentifierL str), rest)
+    )
+
+lexIntLiteral :: Lexer Token
+lexIntLiteral =
+  Parser
+    ( \input -> case span isDigit input of
+        ("", rest) -> Left ([], rest)
+        (str, rest) -> case readEither str of
+          Right i -> Right (LiteralT (IntL i), rest)
+          Left _ -> Left ([UnexpectedError], rest)
+    )
+
+lexLiteral :: Lexer Token
+lexLiteral = ws *> (lexStringLiteral <|> lexIntLiteral) <* ws
 
 lexNonLiterals :: [(String, Token)] -> Parser Char LexError Token
 lexNonLiterals ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiterals rest
 lexNonLiterals [] = empty
 
 lexNextToken :: Lexer Token
-lexNextToken = (ws *> lexNonLiterals stringToToken <* ws) <|> lexLiteralT
+lexNextToken = (ws *> lexNonLiterals stringToToken <* ws) <|> lexLiteral
 
 lexFile :: Lexer [Token]
 lexFile = many lexNextToken

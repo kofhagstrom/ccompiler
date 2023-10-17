@@ -294,6 +294,17 @@ parseStatement =
             expr <- parseExpression
             parseTokens [CloseParenthesisT]
             stmt <- parseStatement
+            parseTokens [KeywordT ElseKW]
+            parseTokens [OpenBraceT]
+            stmt' <- parseStatement
+            parseTokens [CloseBraceT]
+            return (Conditional expr stmt (Just stmt'))
+        )
+    <|> ( do
+            parseTokens [KeywordT IfKW, OpenParenthesisT]
+            expr <- parseExpression
+            parseTokens [CloseParenthesisT]
+            stmt <- parseStatement
             return (Conditional expr stmt Nothing)
         )
 

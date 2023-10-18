@@ -134,32 +134,29 @@ parseStatement =
             return expr
         )
     <|> ( do
-            parseTokens [KeywordT IfKW, OpenParenthesisT]
-            expr <- parseExpression
-            parseTokens [CloseParenthesisT]
-            stmt <- parseStatement
+            ifStmt <- parseIfStatement
             parseTokens [KeywordT ElseKW]
-            stmt' <- parseStatement
-            return (Conditional expr stmt (Just stmt'))
+            ifStmt . Just <$> parseStatement
         )
     <|> ( do
-            parseTokens [KeywordT IfKW, OpenParenthesisT]
-            expr <- parseExpression
-            parseTokens [CloseParenthesisT]
-            stmt <- parseStatement
+            ifStmt <- parseIfStatement
             parseTokens [KeywordT ElseKW]
             parseTokens [OpenBraceT]
-            stmt' <- parseStatement
+            stmt <- parseStatement
             parseTokens [CloseBraceT]
-            return (Conditional expr stmt (Just stmt'))
+            return (ifStmt (Just stmt))
         )
     <|> ( do
-            parseTokens [KeywordT IfKW, OpenParenthesisT]
-            expr <- parseExpression
-            parseTokens [CloseParenthesisT]
-            stmt <- parseStatement
-            return (Conditional expr stmt Nothing)
+            ifStmt <- parseIfStatement
+            return (ifStmt Nothing)
         )
+  where
+    parseIfStatement =
+      do
+        parseTokens [KeywordT IfKW, OpenParenthesisT]
+        expr <- parseExpression
+        parseTokens [CloseParenthesisT]
+        Conditional expr <$> parseStatement
 
 -- <exp> ::= <id> "=" <exp> | <logical-or-exp>
 parseExpression :: ASTParser Expression
@@ -167,8 +164,7 @@ parseExpression =
   ( do
       identifier <- parseIdentifierLiteral
       parseTokens [AssignmentT]
-      expr <- parseExpression
-      return (Assign identifier expr)
+      Assign identifier <$> parseExpression
   )
     <|> parseConditionalExpression
 
@@ -180,8 +176,7 @@ parseConditionalExpression =
       parseTokens [QuestionMarkT]
       expr' <- parseExpression
       parseTokens [ColonT]
-      expr'' <- parseConditionalExpression
-      return (ConditionalExpression expr expr' expr'')
+      ConditionalExpression expr expr' <$> parseConditionalExpression
   )
     <|> parseLogicalOrExpression
 
@@ -296,18 +291,16 @@ parseFactor =
       parseTokens [CloseParenthesisT]
       return expr
   )
-    <|> parseUnaryOperation
+    <|> ( do
+            t <- parseOneOfTheseTokens [BangT, MinusT, TildeT]
+            case t of
+              BangT -> UnaryOperator LogicalNegation <$> parseFactor
+              MinusT -> UnaryOperator Negation <$> parseFactor
+              TildeT -> UnaryOperator BitwiseComplement <$> parseFactor
+              _ -> empty
+        )
     <|> (Constant <$> parseIntLiteral)
     <|> (Variable <$> parseIdentifierLiteral)
-
-parseUnaryOperation :: ASTParser Expression
-parseUnaryOperation = do
-  t <- tryParseTokens [BangT, MinusT, TildeT]
-  case t of
-    BangT -> UnaryOperator LogicalNegation <$> parseFactor
-    MinusT -> UnaryOperator Negation <$> parseFactor
-    TildeT -> UnaryOperator BitwiseComplement <$> parseFactor
-    _ -> empty
 
 parseIntLiteral :: ASTParser Integer
 parseIntLiteral = Parser $ \case
@@ -324,8 +317,8 @@ parseIdentifierLiteral = Parser $ \case
 parseTokens :: [Token] -> ASTParser [Token]
 parseTokens = traverse parseToken
 
-tryParseTokens :: [Token] -> ASTParser Token
-tryParseTokens =
+parseOneOfTheseTokens :: [Token] -> ASTParser Token
+parseOneOfTheseTokens =
   foldr
     ((<|>) . parseToken)
     (Parser $ \inp -> Left ([UnexpectedError "Tried to parse on empty input"], inp))

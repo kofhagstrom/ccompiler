@@ -129,7 +129,6 @@ lexIntLiteral :: Lexer Token
 lexIntLiteral =
   Parser
     ( \input -> case span isDigit input of
-        ("", rest) -> Left ([], rest)
         (str, rest) -> case readEither str of
           Right i -> Right (LiteralT (IntL i), rest)
           Left _ -> Left ([UnexpectedError], rest)
@@ -138,12 +137,12 @@ lexIntLiteral =
 lexLiteral :: Lexer Token
 lexLiteral = ws *> (lexStringLiteral <|> lexIntLiteral) <* ws
 
-lexNonLiterals :: [(String, Token)] -> Parser Char LexError Token
-lexNonLiterals ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiterals rest
-lexNonLiterals [] = empty
+lexNonLiteral :: [(String, Token)] -> Parser Char LexError Token
+lexNonLiteral ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiteral rest
+lexNonLiteral [] = empty
 
 lexNextToken :: Lexer Token
-lexNextToken = (ws *> lexNonLiterals stringToToken <* ws) <|> lexLiteral
+lexNextToken = (ws *> lexNonLiteral stringToToken <* ws) <|> lexLiteral
 
 lexFile :: Lexer [Token]
 lexFile = many lexNextToken

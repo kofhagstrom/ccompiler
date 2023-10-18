@@ -9,16 +9,20 @@ import ParserCombinator
 import System.Environment (getArgs)
 
 runLexer :: String -> IO ()
-runLexer fileContents = case run lexFile $ unlines . lines $ fileContents of
+runLexer fileContents = case run lexFile input of
   Right (out, _) -> putStrLn $ show out
   Left (es, _) -> error (concat $ show <$> es)
+  where
+    input = unlines . lines $ fileContents
 
 runParser :: String -> IO ()
-runParser fileContents = case run lexFile $ unlines . lines $ fileContents of
+runParser fileContents = case run lexFile input of
   Right (out, _) -> case run parseProgram out of
     Right (out', _) -> putStrLn $ show out'
     Left (es', _) -> error (concat $ show <$> es')
   Left (es, _) -> error (concat $ show <$> es)
+  where
+    input = unlines . lines $ fileContents
 
 main :: IO ()
 main = do

@@ -47,6 +47,7 @@ data Statement
   = Return Expression
   | Expression Expression
   | Conditional Expression Statement (Maybe Statement)
+  | Compound [BlockItem]
   deriving (Show, Eq)
 
 data Expression
@@ -117,8 +118,8 @@ parseDeclaration =
 
 -- <statement> ::= "return" <exp> ";"
 --                | <exp> ";"
---                | "int" <id> [ = <exp>] ";"
 --                | "if" "(" <exp> ")" <statement> [ "else" <statement> ]
+--                | "{" { <block-item> } "}"
 parseStatement :: ASTParser Statement
 parseStatement =
   ( parseTokens [KeywordT ReturnKW]
@@ -129,17 +130,14 @@ parseStatement =
             <$> parseExpression
             <* parseTokens [SemiColonT]
         )
+    <|> ( parseTokens [OpenBraceT]
+            *> (Compound <$> many parseBlockItem)
+            <* parseTokens [CloseBraceT]
+        )
     <|> ( do
             ifStmt <- parseIfStatement
             _ <- parseTokens [KeywordT ElseKW]
             ifStmt . Just <$> parseStatement
-        )
-    <|> ( do
-            ifStmt <- parseIfStatement
-            _ <- parseTokens [KeywordT ElseKW, OpenBraceT]
-            stmt <- parseStatement
-            _ <- parseTokens [CloseBraceT]
-            return (ifStmt (Just stmt))
         )
     <|> ( do
             ifStmt <- parseIfStatement

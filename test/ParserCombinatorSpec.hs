@@ -331,7 +331,13 @@ spec = do
                   ( Conditional
                       (Variable "flag")
                       (Return (Constant 0))
-                      (Just (Conditional (Variable "other_flag") (Return (Constant 1)) (Just (Return (Constant 2)))))
+                      ( Just
+                          ( Compound
+                              [ State
+                                  (Conditional (Variable "other_flag") (Return (Constant 1)) (Just (Return (Constant 2))))
+                              ]
+                          )
+                      )
                   )
               ]
           )

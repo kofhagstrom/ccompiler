@@ -10,17 +10,17 @@ import System.Environment (getArgs)
 
 runLexer :: String -> IO ()
 runLexer fileContents = case run lexFile input of
-  Right (out, _) -> putStrLn $ show out
-  Left (es, _) -> error (concat $ show <$> es)
+  Right (out, _) -> print out
+  Left (es, _) -> error (concatMap show es)
   where
     input = unlines . lines $ fileContents
 
 runParser :: String -> IO ()
 runParser fileContents = case run lexFile input of
   Right (out, _) -> case run parseProgram out of
-    Right (out', _) -> putStrLn $ show out'
-    Left (es', _) -> error (concat $ show <$> es')
-  Left (es, _) -> error (concat $ show <$> es)
+    Right (out', _) -> print out'
+    Left (es', _) -> error (concatMap show es')
+  Left (es, _) -> error (concatMap show es)
   where
     input = unlines . lines $ fileContents
 

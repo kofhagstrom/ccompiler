@@ -7,30 +7,34 @@ import Test.Hspec
 lexHelper :: String -> [Token]
 lexHelper str = case run lexFile str of
   Right (ts, _) -> ts
-  Left e -> error (concat $ show <$> e)
+  Left e -> error (concatMap show e)
 
 spec :: Spec
-spec = do
+spec =
   describe "" $
     it "" $
-      ( lexHelper
-          ( "int main(){"
-              ++ "a = 1 ? 2 : 3;"
-              ++ "if (flag) return 0;"
-              ++ "else if (other_flag) return 1;"
-              ++ "else return 2;"
-              ++ "a==!~-(b+c);"
-              ++ "a>b;"
-              ++ "b<a;"
-              ++ "a>=b;"
-              ++ "a<=b;"
-              ++ "a!=b;"
-              ++ "a&&b;"
-              ++ "a||b;"
-              ++ "a=b;"
-              ++ "}"
-          )
-      )
+      lexHelper
+        ( "int main(){"
+            ++ "a = 1 ? 2 : 3;"
+            ++ "if (flag) return 0;"
+            ++ "else if (other_flag) return 1;"
+            ++ "else return 2;"
+            ++ "a==!~-(b+c);"
+            ++ "a>b;"
+            ++ "b<a;"
+            ++ "a>=b;"
+            ++ "a<=b;"
+            ++ "a!=b;"
+            ++ "a&&b;"
+            ++ "a||b;"
+            ++ "a=b;"
+            ++ "}"
+            ++ "for "
+            ++ "while "
+            ++ "do "
+            ++ "break "
+            ++ "continue "
+        )
         `shouldBe` [ KeywordT IntKW,
                      LiteralT (IdentifierL "main"),
                      OpenParenthesisT,
@@ -106,5 +110,10 @@ spec = do
                      AssignmentT,
                      LiteralT (IdentifierL "b"),
                      SemiColonT,
-                     CloseBraceT
+                     CloseBraceT,
+                     KeywordT ForKW,
+                     KeywordT WhileKW,
+                     KeywordT DoKW,
+                     KeywordT BreakKW,
+                     KeywordT ContinueKW
                    ]

@@ -45,9 +45,14 @@ data Declaration = Declare String (Maybe Expression) deriving (Show, Eq)
 
 data Statement
   = Return Expression
-  | Expression Expression
+  | Expression (Maybe Expression)
   | Conditional Expression Statement (Maybe Statement)
   | Compound [BlockItem]
+  | For (Maybe Expression) Expression (Maybe Expression) Statement
+  | ForDecl Declaration Expression (Maybe Expression) Statement
+  | Do Statement Expression
+  | Break
+  | Continue
   deriving (Show, Eq)
 
 data Expression
@@ -120,13 +125,14 @@ parseDeclaration =
 --                | <exp> ";"
 --                | "if" "(" <exp> ")" <statement> [ "else" <statement> ]
 --                | "{" { <block-item> } "}"
+--                | "do" <statement> "while" "(" <exp> ")" ";"
 parseStatement :: ASTParser Statement
 parseStatement =
   ( parseTokens [KeywordT ReturnKW]
       *> (Return <$> parseExpression)
       <* parseTokens [SemiColonT]
   )
-    <|> ( Expression
+    <|> ( Expression . Just
             <$> parseExpression
             <* parseTokens [SemiColonT]
         )

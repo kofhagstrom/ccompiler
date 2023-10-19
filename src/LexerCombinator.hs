@@ -49,6 +49,11 @@ data Keyword
   | ReturnKW
   | IfKW
   | ElseKW
+  | ForKW
+  | DoKW
+  | WhileKW
+  | BreakKW
+  | ContinueKW
   deriving (Show, Eq)
 
 data Literal
@@ -67,6 +72,12 @@ stringToToken =
     ("if", KeywordT IfKW),
     ("else", KeywordT ElseKW),
     ("return", KeywordT ReturnKW),
+    ("for", KeywordT ForKW),
+    ("while", KeywordT WhileKW),
+    ("do", KeywordT DoKW),
+    ("break", KeywordT BreakKW),
+    ("continue", KeywordT ContinueKW),
+    ("==", LogicalEqualityT),
     ("==", LogicalEqualityT),
     ("=", AssignmentT),
     ("!=", NotEqualT),
@@ -114,7 +125,7 @@ lexString = traverse lexChar
 isAllowedLiteralChar :: Char -> Bool
 isAllowedLiteralChar c = isAlpha c || isIn c "_"
   where
-    isIn c' (l : ls) = if l == c' then True else isIn c' ls
+    isIn c' (l : ls) = (l == c') || isIn c' ls
     isIn _ [] = False
 
 lexStringLiteral :: Lexer Token

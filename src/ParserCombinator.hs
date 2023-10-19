@@ -282,7 +282,9 @@ parseTerm = do
 -- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int> | <id>
 parseFactor :: ASTParser Expression
 parseFactor =
-  ( parseTokens [OpenParenthesisT] *> parseExpression <* parseTokens [CloseParenthesisT]
+  ( parseTokens [OpenParenthesisT]
+      *> parseExpression
+      <* parseTokens [CloseParenthesisT]
   )
     <|> ( do
             t <- parseOneOfTheseTokens [BangT, MinusT, TildeT]

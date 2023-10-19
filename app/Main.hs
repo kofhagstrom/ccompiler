@@ -16,13 +16,11 @@ runLexer fileContents = case run lexFile input of
     input = unlines . lines $ fileContents
 
 runParser :: String -> IO ()
-runParser fileContents = case run lexFile input of
-  Right (out, _) -> case run parseProgram out of
-    Right (out', _) -> print out'
-    Left (es', _) -> error (concatMap show es')
-  Left (es, _) -> error (concatMap show es)
+runParser fileContents =
+  either (error . concatMap show) handleParse . run lexFile $ input
   where
     input = unlines . lines $ fileContents
+    handleParse (out, _) = either (error . concatMap show) (print . fst) . run parseProgram $ out
 
 main :: IO ()
 main = do

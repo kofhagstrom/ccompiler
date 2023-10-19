@@ -774,86 +774,13 @@ spec = do
               ]
           )
   describe "week_6" $ do
-    it "if_1" $
-      parseHelper "int main() {if (flag) return 0; else if (other_flag) return 1; else return 2;}"
+    it "assign_ternary" $
+      parseHelper "int main() {int a = 0; a = 1 ? 2 : 3; return a;}"
         `shouldBe` Program
           ( Fun
               "main"
-              [ State
-                  ( Conditional
-                      (Variable "flag")
-                      (Return (Constant 0))
-                      ( Just
-                          ( Conditional
-                              (Variable "other_flag")
-                              (Return (Constant 1))
-                              (Just (Return (Constant 2)))
-                          )
-                      )
-                  )
-              ]
-          )
-    it "if_2" $
-      parseHelper "int main() {if (flag) return 0; else {if (other_flag) return 1; else return 2;}}"
-        `shouldBe` Program
-          ( Fun
-              "main"
-              [ State
-                  ( Conditional
-                      (Variable "flag")
-                      (Return (Constant 0))
-                      ( Just
-                          ( Compound
-                              [ State
-                                  ( Conditional
-                                      (Variable "other_flag")
-                                      (Return (Constant 1))
-                                      (Just (Return (Constant 2)))
-                                  )
-                              ]
-                          )
-                      )
-                  )
-              ]
-          )
-    it "if_3" $
-      parseHelper "int main() {if (flag) return 0;}"
-        `shouldBe` Program
-          ( Fun
-              "main"
-              [ State
-                  ( Conditional
-                      (Variable "flag")
-                      (Return (Constant 0))
-                      Nothing
-                  )
-              ]
-          )
-    it "if_4" $
-      parseHelper "int main() {if (flag) return 0; else if (other_flag) return 1;}"
-        `shouldBe` Program
-          ( Fun
-              "main"
-              [ State
-                  ( Conditional
-                      (Variable "flag")
-                      (Return (Constant 0))
-                      ( Just
-                          ( Conditional
-                              (Variable "other_flag")
-                              (Return (Constant 1))
-                              Nothing
-                          )
-                      )
-                  )
-              ]
-          )
-    it "if_5" $
-      parseHelper "int main() {a = 1 ? 2 : 3;}"
-        `shouldBe` Program
-          ( Fun
-              "main"
-              [ State
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                State
                   ( Expression
                       ( Just
                           ( Assign
@@ -864,6 +791,334 @@ spec = do
                                   (Constant 3)
                               )
                           )
+                      )
+                  ),
+                State (Return (Variable "a"))
+              ]
+          )
+    it "multiple_ternary" $
+      parseHelper "int main() { int a = 1 > 2 ? 3 : 4; int b = 1 > 2 ? 5 : 6; return a + b;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant 1) (Constant 2)) (Constant 3) (Constant 4)))),
+                Declaration (Declare "b" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant 1) (Constant 2)) (Constant 5) (Constant 6)))),
+                State
+                  ( Return
+                      ( BinaryOperator
+                          Addition
+                          (Variable "a")
+                          (Variable "b")
+                      )
+                  )
+              ]
+          )
+    it "nested_ternary" $
+      parseHelper "int main() { int a = 1; int b = 2; int flag = 0; return a > b ? 5 : flag ? 6 : 7; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 1))),
+                Declaration (Declare "b" (Just (Constant 2))),
+                Declaration (Declare "flag" (Just (Constant 0))),
+                State
+                  ( Return
+                      ( ConditionalExpression
+                          (BinaryOperator GreaterThan (Variable "a") (Variable "b"))
+                          (Constant 5)
+                          ( ConditionalExpression
+                              (Variable "flag")
+                              (Constant 6)
+                              (Constant 7)
+                          )
+                      )
+                  )
+              ]
+          )
+    it "nested_ternary_2" $
+      parseHelper "int main() { int a = 1 ? 2 ? 3 : 4 : 5; int b = 0 ? 2 ? 3 : 4 : 5; return a * b;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (ConditionalExpression (Constant 1) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
+                Declaration (Declare "b" (Just (ConditionalExpression (Constant 0) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
+                State
+                  ( Return
+                      ( BinaryOperator
+                          Multiplication
+                          (Variable "a")
+                          (Variable "b")
+                      )
+                  )
+              ]
+          )
+    it "rh_assignment" $
+      parseHelper "int main() {int a = 1 ? 2 ? 3 : 4 : 5; int b = 0 ? 2 ? 3 : 4 : 5; return a * b;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (ConditionalExpression (Constant 1) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
+                Declaration (Declare "b" (Just (ConditionalExpression (Constant 0) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
+                State
+                  ( Return
+                      ( BinaryOperator
+                          Multiplication
+                          (Variable "a")
+                          (Variable "b")
+                      )
+                  )
+              ]
+          )
+    it "ternary" $
+      parseHelper "int main() { int a = 0; return a > -1 ? 4 : 5; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                State
+                  ( Return
+                      ( ConditionalExpression
+                          (BinaryOperator GreaterThan (Variable "a") (UnaryOperator Negation (Constant 1)))
+                          (Constant 4)
+                          (Constant 5)
+                      )
+                  )
+              ]
+          )
+    it "ternary_short_circuit" $
+      parseHelper "int main() { int a = 1; int b = 0; a ? (b = 1) : (b = 2); return b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 1))),
+                Declaration (Declare "b" (Just (Constant 0))),
+                State
+                  ( Expression
+                      ( Just
+                          ( ConditionalExpression
+                              (Variable "a")
+                              (Assign "b" (Constant 1))
+                              (Assign "b" (Constant 2))
+                          )
+                      )
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "ternary_short_circuit_2" $
+      parseHelper "int main() { int a = 0; int b = 0; a ? (b = 1) : (b = 2); return b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                Declaration (Declare "b" (Just (Constant 0))),
+                State
+                  ( Expression
+                      ( Just
+                          ( ConditionalExpression
+                              (Variable "a")
+                              (Assign "b" (Constant 1))
+                              (Assign "b" (Constant 2))
+                          )
+                      )
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "else" $
+      parseHelper "int main() { int a = 0; if (a) return 1; else return 2;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Return (Constant 1))
+                      (Just (Return (Constant 2)))
+                  )
+              ]
+          )
+    it "if_nested" $
+      parseHelper "int main() { int a = 1; int b = 0; if (a) b = 1; else if (b) b = 2; return b;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 1))),
+                Declaration (Declare "b" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Expression (Just (Assign "b" (Constant 1))))
+                      ( Just
+                          ( Conditional
+                              (Variable "b")
+                              (Expression (Just (Assign "b" (Constant 2))))
+                              Nothing
+                          )
+                      )
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "if_nested" $
+      parseHelper "int main() { int a = 0; int b = 1; if (a) b = 1; else if (b) b = 2; return b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                Declaration (Declare "b" (Just (Constant 1))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Expression (Just (Assign "b" (Constant 1))))
+                      ( Just
+                          ( Conditional
+                              (Variable "b")
+                              (Expression (Just (Assign "b" (Constant 2))))
+                              Nothing
+                          )
+                      )
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "if_nested" $
+      parseHelper "int main() { int a = 0; int b = 1; if (a) b = 1; else if (b) b = 2; return b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                Declaration (Declare "b" (Just (Constant 1))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Expression (Just (Assign "b" (Constant 1))))
+                      ( Just
+                          ( Conditional
+                              (Variable "b")
+                              (Expression (Just (Assign "b" (Constant 2))))
+                              Nothing
+                          )
+                      )
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "if_nested_3" $
+      parseHelper "int main() { int a = 0; if (1) if (2) a = 3; else a = 4; return a; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Constant 1)
+                      ( Conditional
+                          (Constant 2)
+                          (Expression (Just (Assign "a" (Constant 3))))
+                          (Just (Expression (Just (Assign "a" (Constant 4)))))
+                      )
+                      Nothing
+                  ),
+                State (Return (Variable "a"))
+              ]
+          )
+    it "if_nested_4" $
+      parseHelper "int main() { int a = 0; if (1) if (0) a = 3; else a = 4; return a; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Constant 1)
+                      ( Conditional
+                          (Constant 0)
+                          (Expression (Just (Assign "a" (Constant 3))))
+                          (Just (Expression (Just (Assign "a" (Constant 4)))))
+                      )
+                      Nothing
+                  ),
+                State (Return (Variable "a"))
+              ]
+          )
+    it "if_nested_5" $
+      parseHelper "int main() { int a = 0; if (0) if (0) a = 3; else a = 4; else a = 1; return a; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Constant 0)
+                      ( Conditional
+                          (Constant 0)
+                          (Expression (Just (Assign "a" (Constant 3))))
+                          (Just (Expression (Just (Assign "a" (Constant 4)))))
+                      )
+                      (Just (Expression (Just (Assign "a" (Constant 1)))))
+                  ),
+                State (Return (Variable "a"))
+              ]
+          )
+    it "if_not_taken" $
+      parseHelper "int main() { int a = 0; int b = 0; if (a) b = 1; return b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                Declaration (Declare "b" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Expression (Just (Assign "b" (Constant 1))))
+                      Nothing
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "if_taken" $
+      parseHelper "int main() { int a = 1; int b = 0; if (a) b = 1; return b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 1))),
+                Declaration (Declare "b" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Expression (Just (Assign "b" (Constant 1))))
+                      Nothing
+                  ),
+                State (Return (Variable "b"))
+              ]
+          )
+    it "multiple_if" $
+      parseHelper "int main() { int a = 0; int b = 0; if (a) a = 2; else a = 3; if (b) b = 4; else b = 5; return a + b; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "a" (Just (Constant 0))),
+                Declaration (Declare "b" (Just (Constant 0))),
+                State
+                  ( Conditional
+                      (Variable "a")
+                      (Expression (Just (Assign "a" (Constant 2))))
+                      (Just (Expression (Just (Assign "a" (Constant 3)))))
+                  ),
+                State
+                  ( Conditional
+                      (Variable "b")
+                      (Expression (Just (Assign "b" (Constant 4))))
+                      (Just (Expression (Just (Assign "b" (Constant 5)))))
+                  ),
+                State
+                  ( Return
+                      ( BinaryOperator
+                          Addition
+                          (Variable "a")
+                          (Variable "b")
                       )
                   )
               ]

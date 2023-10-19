@@ -39,9 +39,9 @@ data Token
   | AssignmentT
   | ColonT
   | QuestionMarkT
+  | CommentT String
   | KeywordT Keyword
   | LiteralT Literal
-  | ErrorT String
   deriving (Show, Eq)
 
 data Keyword

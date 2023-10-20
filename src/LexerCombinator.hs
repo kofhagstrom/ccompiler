@@ -152,8 +152,22 @@ lexNonLiteral :: [(String, Token)] -> Parser Char LexError Token
 lexNonLiteral ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiteral rest
 lexNonLiteral [] = empty
 
+lexComment :: Lexer ()
+lexComment = do
+  lexString "//"
+  spanL (/= '\n')
+  return ()
+
+lexNewline :: Lexer ()
+lexNewline = do
+  lexChar '\n'
+  return ()
+
 lexNextToken :: Lexer Token
-lexNextToken = (ws *> lexNonLiteral stringToToken <* ws) <|> lexLiteral
+lexNextToken =
+  ((lexNewline <|> lexComment) >> lexNextToken)
+    <|> (ws *> lexNonLiteral stringToToken <* ws)
+    <|> lexLiteral
 
 lexFile :: Lexer [Token]
 lexFile = many lexNextToken

@@ -25,6 +25,29 @@ parseHelper string = case run lexFile string of
 
 spec :: Spec
 spec = do
+  describe "misc" $ do
+    it "newline" $
+      parseHelper "int main() {\n return 0;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ State
+                  ( Return
+                      (Constant 0)
+                  )
+              ]
+          )
+    it "comment" $
+      parseHelper "int main() { // comment \n return 0;}"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ State
+                  ( Return
+                      (Constant 0)
+                  )
+              ]
+          )
   describe "week_1" $ do
     it "return_0" $
       parseHelper "int main(){return 0;}"

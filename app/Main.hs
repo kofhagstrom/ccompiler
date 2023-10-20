@@ -13,13 +13,13 @@ runLexer fileContents = case run lexFile input of
   Right (out, _) -> print out
   Left (es, _) -> error (concatMap show es)
   where
-    input = unlines . lines $ fileContents
+    input = fileContents
 
 runParser :: String -> IO ()
 runParser fileContents =
   either (error . concatMap show) handleParse . run lexFile $ input
   where
-    input = unlines . lines $ fileContents
+    input = fileContents
     handleParse (out, _) = either (error . concatMap show) (print . fst) . run parseProgram $ out
 
 main :: IO ()

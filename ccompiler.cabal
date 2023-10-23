@@ -67,4 +67,6 @@ test-suite ccompiler-test
     , ccompiler
     , containers ==0.6.*
     , hspec
+  build-tool-depends:
+    hspec-discover:hspec-discover
   default-language: Haskell2010

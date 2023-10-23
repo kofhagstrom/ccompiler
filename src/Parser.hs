@@ -1,6 +1,6 @@
 module Parser (Parser (..)) where
 
-import Control.Applicative
+import Control.Applicative ( Alternative(empty, (<|>)) )
 
 newtype Parser i e o = Parser {run :: i -> Either (e, i) (o, i)}
 

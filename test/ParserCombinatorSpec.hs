@@ -3,25 +3,17 @@ module ParserCombinatorSpec (spec) where
 import Data.List (intercalate)
 import LexerCombinator
 import ParserCombinator
-  ( BinaryOperator (..),
-    BlockItem (..),
-    Declaration (..),
-    Expression (..),
-    FuncDeclaration (..),
-    Parser (..),
-    Program (..),
-    Statement (..),
-    UnaryOperator (..),
-    parseProgram,
-  )
 import Test.Hspec
 
 parseHelper :: String -> Program
 parseHelper string = case run lexFile string of
   Right (tokens, _) -> case run parseProgram tokens of
     Right (ast, _) -> ast
-    Left (es, ts) -> error (concatMap show es ++ "Remaining tokens: " ++ intercalate ", " (show <$> ts))
-  Left (e, _) -> error (concatMap show e)
+    Left (es, ts) -> error (except es ++ "Remaining tokens: " ++ intercalate ", " (show <$> ts))
+  Left (e, _) -> error (except e)
+
+except :: (Show a) => [a] -> String
+except = concatMap show
 
 spec :: Spec
 spec = do
@@ -1144,5 +1136,152 @@ spec = do
                           (Variable "b")
                       )
                   )
+              ]
+          )
+  describe "week 8" $ do
+    it "break" $
+      parseHelper "int main() { int sum = 0; for (int i = 0; i < 10; i = i + 1) { sum = sum + i; if (sum > 10) break; } return sum; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "sum" (Just (Constant 0))),
+                State
+                  ( ForDecl
+                      (Declare "i" (Just (Constant 0)))
+                      (BinaryOperator LessThan (Variable "i") (Constant 10))
+                      ( Just
+                          ( Assign
+                              "i"
+                              ( BinaryOperator
+                                  Addition
+                                  (Variable "i")
+                                  (Constant 1)
+                              )
+                          )
+                      )
+                      ( Compound
+                          [ State
+                              ( Expression
+                                  ( Just
+                                      ( Assign
+                                          "sum"
+                                          ( BinaryOperator
+                                              Addition
+                                              (Variable "sum")
+                                              (Variable "i")
+                                          )
+                                      )
+                                  )
+                              ),
+                            State
+                              ( Conditional
+                                  ( BinaryOperator
+                                      GreaterThan
+                                      (Variable "sum")
+                                      (Constant 10)
+                                  )
+                                  Break
+                                  Nothing
+                              )
+                          ]
+                      )
+                  ),
+                State (Return (Variable "sum"))
+              ]
+          )
+    it "continue" $
+      parseHelper "int main() { int sum = 0; for (int i = 0; i < 10; i = i + 1) { if ((sum / 2) * 2 != sum) continue; sum = sum + i; } return sum; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "sum" (Just (Constant 0))),
+                State
+                  ( ForDecl
+                      (Declare "i" (Just (Constant 0)))
+                      (BinaryOperator LessThan (Variable "i") (Constant 10))
+                      (Just (Assign "i" (BinaryOperator Addition (Variable "i") (Constant 1))))
+                      ( Compound
+                          [ State
+                              ( Conditional
+                                  ( BinaryOperator
+                                      Inequality
+                                      ( BinaryOperator
+                                          Multiplication
+                                          (BinaryOperator Division (Variable "sum") (Constant 2))
+                                          (Constant 2)
+                                      )
+                                      (Variable "sum")
+                                  )
+                                  Continue
+                                  Nothing
+                              ),
+                            State
+                              ( Expression
+                                  ( Just
+                                      ( Assign
+                                          "sum"
+                                          ( BinaryOperator
+                                              Addition
+                                              (Variable "sum")
+                                              (Variable "i")
+                                          )
+                                      )
+                                  )
+                              )
+                          ]
+                      )
+                  ),
+                State (Return (Variable "sum"))
+              ]
+          )
+    it "continue_empty_post" $
+      parseHelper "int main() { int sum = 0; for (int i = 0; i < 10;) { i = i + 1; if (i == 2) continue; sum = sum + i; } return sum; }"
+        `shouldBe` Program
+          ( Fun
+              "main"
+              [ Declaration (Declare "sum" (Just (Constant 0))),
+                State
+                  ( ForDecl
+                      (Declare "i" (Just (Constant 0)))
+                      (BinaryOperator LessThan (Variable "i") (Constant 10))
+                      Nothing
+                      ( Compound
+                          [ State
+                              ( Expression
+                                  ( Just
+                                      ( Assign
+                                          "i"
+                                          ( BinaryOperator
+                                              Addition
+                                              (Variable "i")
+                                              (Constant 1)
+                                          )
+                                      )
+                                  )
+                              ),
+                            State
+                              ( Conditional
+                                  ( BinaryOperator Equality (Variable "i") (Constant 2)
+                                  )
+                                  Continue
+                                  Nothing
+                              ),
+                            State
+                              ( Expression
+                                  ( Just
+                                      ( Assign
+                                          "sum"
+                                          ( BinaryOperator
+                                              Addition
+                                              (Variable "sum")
+                                              (Variable "i")
+                                          )
+                                      )
+                                  )
+                              )
+                          ]
+                      )
+                  ),
+                State (Return (Variable "sum"))
               ]
           )

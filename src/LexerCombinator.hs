@@ -12,7 +12,9 @@ where
 
 import Control.Applicative (Alternative (empty, (<|>)), many)
 import Data.Char (isAlpha, isDigit)
-import Parser
+import Data.Functor (($>))
+import Data.Monoid
+import Parser (Parser (Parser))
 import Text.Read (readEither)
 
 data Token
@@ -123,10 +125,9 @@ lexString :: String -> Lexer String
 lexString = traverse lexChar
 
 isAllowedLiteralChar :: Char -> Bool
-isAllowedLiteralChar c = isAlpha c || isIn c "_"
+isAllowedLiteralChar = getAny . foldMap (Any .) predicates
   where
-    isIn c' (l : ls) = (l == c') || isIn c' ls
-    isIn _ [] = False
+    predicates = [isAlpha, flip elem "_"]
 
 lexStringLiteral :: Lexer Token
 lexStringLiteral =
@@ -153,15 +154,10 @@ lexNonLiteral ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiteral 
 lexNonLiteral [] = empty
 
 lexComment :: Lexer ()
-lexComment = do
-  lexString "//"
-  spanL (/= '\n')
-  return ()
+lexComment = (lexString "//" *> spanL (/= '\n')) $> ()
 
 lexNewline :: Lexer ()
-lexNewline = do
-  lexChar '\n'
-  return ()
+lexNewline = lexChar '\n' $> ()
 
 lexNextToken :: Lexer Token
 lexNextToken =

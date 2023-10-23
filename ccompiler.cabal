@@ -10,8 +10,8 @@ description:    Please see the README on GitHub at <https://github.com/githubuse
 homepage:       https://github.com/githubuser/ccompiler#readme
 bug-reports:    https://github.com/githubuser/ccompiler/issues
 author:         Author name here
-maintainer:     example@example.com
-copyright:      2023 Author name here
+maintainer:     frehags@gmail.com
+copyright:      2023 kofhagstrom
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple

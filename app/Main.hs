@@ -9,18 +9,17 @@ import ParserCombinator
 import System.Environment (getArgs)
 
 runLexer :: String -> IO ()
-runLexer fileContents = case run lexFile input of
+runLexer fileContents = case run lexFile fileContents of
   Right (out, _) -> print out
-  Left (es, _) -> error (concatMap show es)
+  Left (es, _) -> except es
   where
-    input = fileContents
+    except es = error $ concatMap show es
 
 runParser :: String -> IO ()
-runParser fileContents =
-  either (error . concatMap show) handleParse . run lexFile $ input
+runParser = either except handleParse . run lexFile
   where
-    input = fileContents
-    handleParse (out, _) = either (error . concatMap show) (print . fst) . run parseProgram $ out
+    handleParse (out, _) = either except (print . fst) . run parseProgram $ out
+    except es = error $ concatMap show es
 
 main :: IO ()
 main = do

@@ -64,7 +64,7 @@ data Literal
 
 data LexError = UnexpectedError deriving (Show)
 
-type Lexer a = Parser Char LexError a
+type Lexer a = Parser String [LexError] a
 
 stringToToken :: [(String, Token)]
 stringToToken =
@@ -148,7 +148,7 @@ lexIntLiteral =
 lexLiteral :: Lexer Token
 lexLiteral = ws *> (lexStringLiteral <|> lexIntLiteral) <* ws
 
-lexNonLiteral :: [(String, Token)] -> Parser Char LexError Token
+lexNonLiteral :: [(String, Token)] -> Parser String [LexError] Token
 lexNonLiteral ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiteral rest
 lexNonLiteral [] = empty
 

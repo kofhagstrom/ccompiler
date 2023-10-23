@@ -25,7 +25,7 @@ import LexerCombinator
   )
 import Parser
 
-type ASTParser a = Parser Token ParseError a
+type ASTParser a = Parser [Token] [ParseError] a
 
 instance Show ParseError where
   show (UnexpectedTokenError t1 t2) = "Expected " ++ show t1 ++ ", got " ++ show t2 ++ ".\n"

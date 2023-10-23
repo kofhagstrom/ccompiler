@@ -34,3 +34,5 @@ RUN bash -c "source $HOME/.bashrc"
 
 # Update cabal
 RUN bash -c "cabal update"
+
+RUN bash -c "ghcup install hls"

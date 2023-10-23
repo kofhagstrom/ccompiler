@@ -6,16 +6,13 @@
 		"args": {
 			"GHC_VERSION": "recommended",
 			"CABAL_VERSION": "recommended",
-			"HLS_VERSION": "recommended",
+			"HLS_VERSION": "recommended"
 		},
 		"context": "..",
 		"dockerfile": "Dockerfile"
 	},
 	"customizations": {
 		"vscode": {
-			"extensions": [
-				"haskell.haskell"
-			],
 			"settings": {
 				"files.exclude": {
 					"**/*.olean": true,
@@ -37,7 +34,10 @@
 				"haskell.trace.client": "error",
 				"haskell.trace.server": "off",
 				"haskell.upgradeGHCup": true
-			}
+			},
+			"extensions": [
+				"haskell.haskell"
+			]
 		}
 	}
 }

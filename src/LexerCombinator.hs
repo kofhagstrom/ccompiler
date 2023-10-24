@@ -81,7 +81,6 @@ stringToToken =
     ("break", KeywordT BreakKW),
     ("continue", KeywordT ContinueKW),
     ("==", LogicalEqualityT),
-    ("==", LogicalEqualityT),
     ("=", AssignmentT),
     ("!=", NotEqualT),
     ("!", BangT),
@@ -117,9 +116,9 @@ ws = spanL (== ' ')
 lexChar :: Char -> Lexer Char
 lexChar t = Parser f
   where
-    f (c : str) =
+    f str@(c : rest) =
       if c == t
-        then Right (c, str)
+        then Right (c, rest)
         else Left ([UnexpectedError], str)
     f [] = Left ([UnexpectedError], [])
 

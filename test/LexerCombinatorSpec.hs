@@ -34,6 +34,7 @@ spec =
             ++ "do "
             ++ "break "
             ++ "continue "
+            ++ ","
         )
         `shouldBe` [ KeywordT IntKW,
                      LiteralT (IdentifierL "main"),
@@ -115,5 +116,6 @@ spec =
                      KeywordT WhileKW,
                      KeywordT DoKW,
                      KeywordT BreakKW,
-                     KeywordT ContinueKW
+                     KeywordT ContinueKW,
+                     CommaT
                    ]

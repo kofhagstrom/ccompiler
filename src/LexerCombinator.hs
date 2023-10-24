@@ -41,6 +41,7 @@ data Token
   | AssignmentT
   | ColonT
   | QuestionMarkT
+  | CommaT
   | CommentT String
   | KeywordT Keyword
   | LiteralT Literal
@@ -101,7 +102,8 @@ stringToToken =
     ("*", AsteriskT),
     ("/", DivisionT),
     ("?", QuestionMarkT),
-    (":", ColonT)
+    (":", ColonT),
+    (",", CommaT)
   ]
 
 spanL :: (Char -> Bool) -> Lexer String

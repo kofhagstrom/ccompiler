@@ -17,6 +17,7 @@ where
 import Control.Applicative
   ( Alternative (empty, (<|>)),
     many,
+    optional,
   )
 import Data.Functor
 import LexerCombinator
@@ -36,9 +37,9 @@ data ParseError
   = UnexpectedTokenError Token Token
   | UnexpectedError String
 
-newtype Program = Program FuncDeclaration deriving (Show, Eq)
+newtype Program = Program [FuncDeclaration] deriving (Show, Eq)
 
-data FuncDeclaration = Fun String [BlockItem] deriving (Show, Eq)
+data FuncDeclaration = Fun String [String] (Maybe [BlockItem]) deriving (Show, Eq)
 
 data BlockItem = State Statement | Declaration Declaration deriving (Show, Eq)
 
@@ -49,8 +50,8 @@ data Statement
   | Expression (Maybe Expression)
   | Conditional Expression Statement (Maybe Statement)
   | Compound [BlockItem]
-  | For (Maybe Expression) Expression (Maybe Expression) Statement
-  | ForDecl Declaration Expression (Maybe Expression) Statement
+  | For (Maybe Expression) (Maybe Expression) (Maybe Expression) Statement
+  | ForDecl Declaration (Maybe Expression) (Maybe Expression) Statement
   | While Expression Statement
   | Do Statement Expression
   | Break
@@ -89,15 +90,20 @@ data UnaryOperator
 
 -- <program> ::= <function>
 parseProgram :: ASTParser Program
-parseProgram = Program <$> parseFuncDeclaration
+parseProgram = Program <$> many parseFuncDeclaration
 
--- <function> ::= "int" <id> "(" ")" "{" { <block-item> } "}"
+-- <function> ::= "int" <id> "(" [ "int" <id> { "," "int" <id> } ] ")" ( "{" { <block-item> } "}" | ";" )
 parseFuncDeclaration :: ASTParser FuncDeclaration
 parseFuncDeclaration = do
   _ <- parseTokens [KeywordT IntKW]
   identifier <- parseIdentifierLiteral
-  _ <- parseTokens [OpenParenthesisT, CloseParenthesisT, OpenBraceT]
-  func <- Fun identifier <$> many parseBlockItem
+  _ <- parseTokens [OpenParenthesisT]
+  firstArg <- optional (parseTokens [KeywordT IntKW] *> parseIdentifierLiteral)
+  args <- many (parseTokens [CommaT, KeywordT IntKW] *> parseIdentifierLiteral)
+  _ <- parseTokens [CloseParenthesisT, OpenBraceT]
+  func <- case firstArg of
+    Nothing -> Fun identifier args <$> optional (many parseBlockItem)
+    Just arg -> Fun identifier (arg : args) <$> optional (many parseBlockItem)
   _ <- parseTokens [CloseBraceT]
   return func
 
@@ -145,40 +151,34 @@ parseStatement =
     <|> parseExpr
     <|> parseIf
   where
+    -- "if" "(" <exp> ")" <statement> [ "else" <statement> ]
     parseIf =
-      ( do
-          ifStmt <- parseIfStatement
-          _ <- parseTokens [KeywordT ElseKW]
-          ifStmt . Just <$> parseStatement
-      )
-        <|> ( do
-                ifStmt <- parseIfStatement
-                return (ifStmt Nothing)
-            )
-    parseExpr =
-      Expression . Just
-        <$> parseExpression
-        <* parseTokens [SemiColonT]
-        <|> ( do
-                _ <- parseTokens [SemiColonT]
-                return (Expression Nothing)
-            )
+      do
+        ifStmt <- parseConditional
+        elseStmt <- optional (parseTokens [KeywordT ElseKW] *> parseStatement)
+        return (ifStmt elseStmt)
+      where
+        parseConditional =
+          Conditional
+            <$> ( parseTokens [KeywordT IfKW, OpenParenthesisT]
+                    *> parseExpression
+                    <* parseTokens [CloseParenthesisT]
+                )
+            <*> parseStatement
+    -- <exp-option> ";"
+    parseExpr = (optional parseExpression <* parseTokens [SemiColonT]) <&> Expression
+    -- "return" <exp> ";"
     parseReturn =
       parseTokens [KeywordT ReturnKW]
         *> (Return <$> parseExpression)
         <* parseTokens [SemiColonT]
-    parseIfStatement =
-      Conditional
-        <$> ( parseTokens [KeywordT IfKW, OpenParenthesisT]
-                *> parseExpression
-                <* parseTokens [CloseParenthesisT]
-            )
-        <*> parseStatement
+    -- "while" "(" <exp> ")" <statement>
     parseWhile = do
       _ <- parseTokens [KeywordT WhileKW, OpenParenthesisT]
       expr <- parseExpression
       _ <- parseTokens [CloseParenthesisT]
       While expr <$> parseStatement
+    -- "do" <statement> "while" "(" <exp> ")" ";"
     parseDo = do
       _ <- parseTokens [KeywordT DoKW, OpenParenthesisT]
       stmt <- parseStatement
@@ -190,49 +190,24 @@ parseStatement =
       parseTokens [OpenBraceT]
         *> (Compound <$> many parseBlockItem)
         <* parseTokens [CloseBraceT]
+    -- "for" "(" <exp-option> ";" <exp-option> ";" <exp-option> ")" <statement>
     parseFor =
-      ( do
-          _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
-          expr <- parseExpression
-          _ <- parseTokens [SemiColonT]
-          expr' <- parseExpression
-          _ <- parseTokens [SemiColonT]
-          expr'' <- parseExpression
-          _ <- parseTokens [SemiColonT, CloseParenthesisT]
-          For (Just expr) expr' (Just expr'') <$> parseStatement
-      )
-        <|> ( do
-                _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
-                expr <- parseExpression
-                _ <- parseTokens [SemiColonT]
-                expr' <- parseExpression
-                _ <- parseTokens [SemiColonT, CloseParenthesisT]
-                For (Just expr) expr' Nothing <$> parseStatement
-            )
-        <|> ( do
-                _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
-                expr' <- parseExpression
-                _ <- parseTokens [SemiColonT, CloseParenthesisT]
-                For Nothing expr' Nothing <$> parseStatement
-            )
+      do
+        _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
+        expr <- optional (parseExpression <* parseTokens [SemiColonT])
+        expr' <- optional (parseExpression <* parseTokens [SemiColonT])
+        expr'' <- optional (parseExpression <* parseTokens [SemiColonT])
+        _ <- parseTokens [SemiColonT, CloseParenthesisT]
+        For expr expr' expr'' <$> parseStatement
+    -- "for" "(" <declaration> <exp-option> ";" <exp-option> ")" <statement>
     parseForDecl =
-      ( do
+      do
           _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
           decl <- parseDeclaration
-          expr <- parseExpression
-          _ <- parseTokens [SemiColonT]
-          expr' <- parseExpression
+          expr <- optional (parseExpression <* parseTokens [SemiColonT])
+          expr' <- optional parseExpression
           _ <- parseTokens [CloseParenthesisT]
-          ForDecl decl expr (Just expr') <$> parseStatement
-      )
-        <|> ( do
-                _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
-                decl <- parseDeclaration
-                expr <- parseExpression
-                _ <- parseTokens [SemiColonT]
-                _ <- parseTokens [CloseParenthesisT]
-                ForDecl decl expr Nothing <$> parseStatement
-            )
+          ForDecl decl expr expr' <$> parseStatement
 
 -- <exp> ::= <id> "=" <exp> | <logical-or-exp>
 parseExpression :: ASTParser Expression

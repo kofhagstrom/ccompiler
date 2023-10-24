@@ -215,103 +215,76 @@ parseConditionalExpression =
 parseLogicalOrExpression :: ASTParser Expression
 parseLogicalOrExpression = do
   e1 <- parseLogicalAndExpression
-  loop e1
-  where
-    loop e =
-      ( do
-          t <- getNextToken
-          e2 <- parseLogicalAndExpression
-          case t of
-            OrT -> loop (BinaryOperator LogicalOr e e2)
-            _ -> empty
-      )
-        <|> return e
+  loop e1 parseLogicalAndExpression $ \t e e' ->
+    case t of
+      OrT -> Just (BinaryOperator LogicalOr e e')
+      _ -> Nothing
 
 -- <logical-and-exp> ::= <equality-exp> { "&&" <equality-exp> }
 parseLogicalAndExpression :: ASTParser Expression
 parseLogicalAndExpression = do
   e1 <- parseEqualityExpression
-  loop e1
-  where
-    loop e =
-      ( do
-          t <- getNextToken
-          e2 <- parseEqualityExpression
-          case t of
-            AndT -> loop (BinaryOperator LogicalAnd e e2)
-            _ -> empty
-      )
-        <|> return e
+  loop e1 parseEqualityExpression $ \t e e' ->
+    case t of
+      AndT -> Just (BinaryOperator LogicalAnd e e')
+      _ -> Nothing
 
 -- <equality-exp> ::= <relational-exp> { ("!=" | "==") <relational-exp> }
 parseEqualityExpression :: ASTParser Expression
 parseEqualityExpression = do
   e1 <- parseRelationalExpression
-  loop e1
-  where
-    loop e =
-      ( do
-          t <- getNextToken
-          e2 <- parseRelationalExpression
-          case t of
-            NotEqualT -> loop (BinaryOperator Inequality e e2)
-            LogicalEqualityT -> loop (BinaryOperator Equality e e2)
-            _ -> empty
-      )
-        <|> return e
+  loop e1 parseRelationalExpression $ \t e e' ->
+    case t of
+      NotEqualT -> Just (BinaryOperator Inequality e e')
+      LogicalEqualityT -> Just (BinaryOperator Equality e e')
+      _ -> Nothing
 
 -- <relational-exp> ::= <additive-exp> { ("<" | ">" | "<=" | ">=") <additive-exp> }
 parseRelationalExpression :: ASTParser Expression
 parseRelationalExpression = do
   e1 <- parseAdditiveExpression
-  loop e1
-  where
-    loop e =
-      ( do
-          t <- getNextToken
-          e2 <- parseAdditiveExpression
-          case t of
-            LessThanT -> loop (BinaryOperator LessThan e e2)
-            GreaterThanT -> loop (BinaryOperator GreaterThan e e2)
-            LessThanOrEqualT -> loop (BinaryOperator LessThanOrEqual e e2)
-            GreaterThanOrEqualT -> loop (BinaryOperator GreaterThanOrEqual e e2)
-            _ -> empty
-      )
-        <|> return e
+  loop
+    e1
+    parseAdditiveExpression
+    ( \t e e' ->
+        case t of
+          LessThanT -> Just (BinaryOperator LessThan e e')
+          GreaterThanT -> Just (BinaryOperator GreaterThan e e')
+          LessThanOrEqualT -> Just (BinaryOperator LessThanOrEqual e e')
+          GreaterThanOrEqualT -> Just (BinaryOperator GreaterThanOrEqual e e')
+          _ -> Nothing
+    )
 
 -- <additive-exp> ::= <term> { ("+" | "-") <term> }
 parseAdditiveExpression :: ASTParser Expression
 parseAdditiveExpression = do
   e1 <- parseTerm
-  loop e1
-  where
-    loop e =
-      ( do
-          t <- getNextToken
-          e2 <- parseTerm
-          case t of
-            PlusT -> loop (BinaryOperator Addition e e2)
-            MinusT -> loop (BinaryOperator Subtraction e e2)
-            _ -> empty
-      )
-        <|> return e
+  loop e1 parseTerm $ \t e e' ->
+    case t of
+      PlusT -> Just (BinaryOperator Addition e e')
+      MinusT -> Just (BinaryOperator Subtraction e e')
+      _ -> Nothing
 
 -- <term> ::= <factor> { ("*" | "/") <factor> }
 parseTerm :: ASTParser Expression
 parseTerm = do
   e1 <- parseFactor
-  loop e1
-  where
-    loop e =
-      ( do
-          t <- getNextToken
-          e2 <- parseFactor
-          case t of
-            AsteriskT -> loop (BinaryOperator Multiplication e e2)
-            DivisionT -> loop (BinaryOperator Division e e2)
-            _ -> empty
-      )
-        <|> return e
+  loop e1 parseFactor $ \t e e' ->
+    case t of
+      AsteriskT -> Just (BinaryOperator Multiplication e e')
+      DivisionT -> Just (BinaryOperator Division e e')
+      _ -> Nothing
+
+loop :: t1 -> Parser [Token] [ParseError] t2 -> (Token -> t1 -> t2 -> Maybe t1) -> Parser [Token] [ParseError] t1
+loop e parser pattern =
+  ( do
+      t <- getNextToken
+      e2 <- parser
+      case pattern t e e2 of
+        Just e' -> loop e' parser pattern
+        Nothing -> empty
+  )
+    <|> return e
 
 -- <factor> ::= <function-call> | "(" <exp> ")" | <unary_op> <factor> | <int> | <id>
 parseFactor :: ASTParser Expression

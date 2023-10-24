@@ -168,12 +168,12 @@ parseStatement =
     -- "for" "(" <exp-option> ";" <exp-option> ";" <exp-option> ")" <statement>
     parseFor =
       do
-        expr <- parseTokens [KeywordT ForKW, OpenParenthesisT] *> parseOptionalExpression
-        expr' <- parseOptionalExpression
-        expr'' <- parseOptionalExpression <* parseTokens [SemiColonT, CloseParenthesisT]
+        expr <- parseTokens [KeywordT ForKW, OpenParenthesisT] *> parseOptionalExpression'
+        expr' <- parseOptionalExpression'
+        expr'' <- parseOptionalExpression' <* parseTokens [SemiColonT, CloseParenthesisT]
         For expr expr' expr'' <$> parseStatement
       where
-        parseOptionalExpression = optional (parseExpression <* parseTokens [SemiColonT])
+        parseOptionalExpression' = optional (parseExpression <* parseTokens [SemiColonT])
     -- "for" "(" <declaration> <exp-option> ";" <exp-option> ")" <statement>
     parseForDeclaration =
       do

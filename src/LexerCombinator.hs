@@ -1,6 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# OPTIONS_GHC -Wno-unused-do-bind #-}
-
 module LexerCombinator
   ( Keyword (..),
     Token (..),
@@ -13,7 +10,7 @@ where
 import Control.Applicative (Alternative (empty, (<|>)), many)
 import Data.Char (isAlpha, isDigit)
 import Data.Functor (($>))
-import Data.Monoid
+import Data.Monoid (Any (Any, getAny))
 import Parser (Parser (Parser))
 import Text.Read (readEither)
 

@@ -20,6 +20,7 @@ import Control.Applicative
     optional,
   )
 import Data.Functor
+import Data.Maybe (maybeToList)
 import LexerCombinator
   ( Keyword (BreakKW, ContinueKW, DoKW, ElseKW, ForKW, IfKW, IntKW, ReturnKW, WhileKW),
     Literal (IdentifierL, IntL),
@@ -65,6 +66,7 @@ data Expression
   | Variable String
   | Assign String Expression
   | ConditionalExpression Expression Expression Expression
+  | FunCall String [Expression]
   deriving (Show, Eq)
 
 data BinaryOperator
@@ -101,11 +103,7 @@ parseFuncDeclaration = do
   firstArg <- optional (parseTokens [KeywordT IntKW] *> parseIdentifierLiteral)
   args <- many (parseTokens [CommaT, KeywordT IntKW] *> parseIdentifierLiteral)
   _ <- parseTokens [CloseParenthesisT, OpenBraceT]
-  func <- case firstArg of
-    Nothing -> Fun identifier args <$> optional (many parseBlockItem)
-    Just arg -> Fun identifier (arg : args) <$> optional (many parseBlockItem)
-  _ <- parseTokens [CloseBraceT]
-  return func
+  Fun identifier (maybeToList firstArg ++ args) <$> (optional (many parseBlockItem) <* parseTokens [CloseBraceT])
 
 -- <block-item> ::= <statement> | <declaration>
 parseBlockItem :: ASTParser BlockItem
@@ -114,20 +112,11 @@ parseBlockItem = State <$> parseStatement <|> Declaration <$> parseDeclaration
 -- <declaration> ::= "int" <id> [ = <exp> ] ";"
 parseDeclaration :: ASTParser Declaration
 parseDeclaration =
-  ( do
-      identifier <- parseDeclIdentifier
-      _ <- parseTokens [AssignmentT]
-      expr <- parseExpression
-      _ <- parseTokens [SemiColonT]
-      return (identifier (Just expr))
-  )
-    <|> ( do
-            identifier <- parseDeclIdentifier
-            _ <- parseTokens [SemiColonT]
-            return (identifier Nothing)
-        )
-  where
-    parseDeclIdentifier = parseTokens [KeywordT IntKW] *> (Declare <$> parseIdentifierLiteral)
+  do
+    identifier <- parseTokens [KeywordT IntKW] *> (Declare <$> parseIdentifierLiteral)
+    expr <- optional (parseTokens [AssignmentT] *> parseExpression)
+    _ <- parseTokens [SemiColonT]
+    return (identifier expr)
 
 -- <statement> ::= "return" <exp> ";"
 --                | <exp-option> ";"
@@ -153,20 +142,15 @@ parseStatement =
   where
     -- "if" "(" <exp> ")" <statement> [ "else" <statement> ]
     parseIf =
-      do
-        ifStmt <- parseConditional
-        elseStmt <- optional (parseTokens [KeywordT ElseKW] *> parseStatement)
-        return (ifStmt elseStmt)
-      where
-        parseConditional =
-          Conditional
-            <$> ( parseTokens [KeywordT IfKW, OpenParenthesisT]
-                    *> parseExpression
-                    <* parseTokens [CloseParenthesisT]
-                )
-            <*> parseStatement
+      Conditional
+        <$> ( parseTokens [KeywordT IfKW, OpenParenthesisT]
+                *> parseExpression
+                <* parseTokens [CloseParenthesisT]
+            )
+        <*> parseStatement
+        <*> optional (parseTokens [KeywordT ElseKW] *> parseStatement)
     -- <exp-option> ";"
-    parseExpr = (optional parseExpression <* parseTokens [SemiColonT]) <&> Expression
+    parseExpr = Expression <$> (optional parseExpression <* parseTokens [SemiColonT])
     -- "return" <exp> ";"
     parseReturn =
       parseTokens [KeywordT ReturnKW]
@@ -202,12 +186,12 @@ parseStatement =
     -- "for" "(" <declaration> <exp-option> ";" <exp-option> ")" <statement>
     parseForDecl =
       do
-          _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
-          decl <- parseDeclaration
-          expr <- optional (parseExpression <* parseTokens [SemiColonT])
-          expr' <- optional parseExpression
-          _ <- parseTokens [CloseParenthesisT]
-          ForDecl decl expr expr' <$> parseStatement
+        _ <- parseTokens [KeywordT ForKW, OpenParenthesisT]
+        decl <- parseDeclaration
+        expr <- optional (parseExpression <* parseTokens [SemiColonT])
+        expr' <- optional parseExpression
+        _ <- parseTokens [CloseParenthesisT]
+        ForDecl decl expr expr' <$> parseStatement
 
 -- <exp> ::= <id> "=" <exp> | <logical-or-exp>
 parseExpression :: ASTParser Expression
@@ -329,12 +313,13 @@ parseTerm = do
       )
         <|> return e
 
--- <factor> ::= "(" <exp> ")" | <unary_op> <factor> | <int> | <id>
+-- <factor> ::= <function-call> | "(" <exp> ")" | <unary_op> <factor> | <int> | <id>
 parseFactor :: ASTParser Expression
 parseFactor =
-  parseTokens [OpenParenthesisT]
-    *> parseExpression
-    <* parseTokens [CloseParenthesisT]
+  parseFunctionCall
+    <|> parseTokens [OpenParenthesisT]
+      *> parseExpression
+      <* parseTokens [CloseParenthesisT]
     <|> ( do
             t <- parseOneOfTheseTokens [BangT, MinusT, TildeT]
             case t of
@@ -345,6 +330,16 @@ parseFactor =
         )
     <|> Constant <$> parseIntLiteral
     <|> Variable <$> parseIdentifierLiteral
+
+-- <function-call> ::= id "(" [ <exp> { "," <exp> } ] ")"
+parseFunctionCall :: ASTParser Expression
+parseFunctionCall = do
+  identifier <- parseIdentifierLiteral
+  _ <- parseTokens [OpenParenthesisT]
+  firstArg <- optional parseExpression
+  args <- many (parseTokens [CommaT] *> parseExpression)
+  _ <- parseTokens [CloseParenthesisT]
+  return (FunCall identifier (maybeToList firstArg ++ args))
 
 parseIntLiteral :: ASTParser Integer
 parseIntLiteral = Parser $ \case

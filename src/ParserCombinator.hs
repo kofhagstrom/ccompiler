@@ -11,6 +11,7 @@ module ParserCombinator
     BinaryOperator (..),
     BlockItem (..),
     Declaration (..),
+    TopLevelItem (..),
   )
 where
 
@@ -38,7 +39,9 @@ data ParseError
   = UnexpectedTokenError Token Token
   | UnexpectedError String
 
-newtype Program = Program [FuncDeclaration] deriving (Show, Eq)
+newtype Program = Program [TopLevelItem] deriving (Show, Eq)
+
+data TopLevelItem = F FuncDeclaration | D Declaration deriving (Show, Eq)
 
 data FuncDeclaration = Fun String [String] (Maybe [BlockItem]) deriving (Show, Eq)
 
@@ -92,7 +95,7 @@ data UnaryOperator
 
 -- <program> ::= <function>
 parseProgram :: ASTParser Program
-parseProgram = Program <$> many parseFuncDeclaration
+parseProgram = Program <$> many (F <$> parseFuncDeclaration <|> D <$> parseDeclaration)
 
 -- <function> ::= "int" <id> "(" [ "int" <id> { "," "int" <id> } ] ")" ( "{" { <block-item> } "}" | ";" )
 parseFuncDeclaration :: ASTParser FuncDeclaration
@@ -177,14 +180,12 @@ parseStatement =
         (expr, expr', expr'') <-
           parseTokens [KeywordT ForKW, OpenParenthesisT]
             *> ( (,,)
-                   <$> parseOptionalExpression'
-                   <*> parseOptionalExpression'
-                   <*> parseOptionalExpression'
+                   <$> optional (parseExpression <* parseTokens [SemiColonT])
+                   <*> optional (parseExpression <* parseTokens [SemiColonT])
+                   <*> optional parseExpression
                )
-            <* parseTokens [SemiColonT, CloseParenthesisT]
+            <* parseTokens [CloseParenthesisT]
         For expr expr' expr'' <$> parseStatement
-      where
-        parseOptionalExpression' = optional (parseExpression <* parseTokens [SemiColonT])
     -- "for" "(" <declaration> <exp-option> ";" <exp-option> ")" <statement>
     parseForDeclaration =
       do
@@ -219,9 +220,9 @@ parseLogicalOrExpression :: ASTParser Expression
 parseLogicalOrExpression =
   loop
     parseLogicalAndExpression
-    ( \t e e' ->
+    ( \t e1 e2 ->
         case t of
-          OrT -> Just (BinaryOperator LogicalOr e e')
+          OrT -> Just (BinaryOperator LogicalOr e1 e2)
           _ -> Nothing
     )
 
@@ -230,9 +231,9 @@ parseLogicalAndExpression :: ASTParser Expression
 parseLogicalAndExpression =
   loop
     parseEqualityExpression
-    ( \t e e' ->
+    ( \t e1 e2 ->
         case t of
-          AndT -> Just (BinaryOperator LogicalAnd e e')
+          AndT -> Just (BinaryOperator LogicalAnd e1 e2)
           _ -> Nothing
     )
 
@@ -241,10 +242,10 @@ parseEqualityExpression :: ASTParser Expression
 parseEqualityExpression =
   loop
     parseRelationalExpression
-    ( \t e e' ->
+    ( \t e1 e2 ->
         case t of
-          NotEqualT -> Just (BinaryOperator Inequality e e')
-          LogicalEqualityT -> Just (BinaryOperator Equality e e')
+          NotEqualT -> Just (BinaryOperator Inequality e1 e2)
+          LogicalEqualityT -> Just (BinaryOperator Equality e1 e2)
           _ -> Nothing
     )
 
@@ -253,12 +254,12 @@ parseRelationalExpression :: ASTParser Expression
 parseRelationalExpression =
   loop
     parseAdditiveExpression
-    ( \t e e' ->
+    ( \t e1 e2 ->
         case t of
-          LessThanT -> Just (BinaryOperator LessThan e e')
-          GreaterThanT -> Just (BinaryOperator GreaterThan e e')
-          LessThanOrEqualT -> Just (BinaryOperator LessThanOrEqual e e')
-          GreaterThanOrEqualT -> Just (BinaryOperator GreaterThanOrEqual e e')
+          LessThanT -> Just (BinaryOperator LessThan e1 e2)
+          GreaterThanT -> Just (BinaryOperator GreaterThan e1 e2)
+          LessThanOrEqualT -> Just (BinaryOperator LessThanOrEqual e1 e2)
+          GreaterThanOrEqualT -> Just (BinaryOperator GreaterThanOrEqual e1 e2)
           _ -> Nothing
     )
 
@@ -267,10 +268,10 @@ parseAdditiveExpression :: ASTParser Expression
 parseAdditiveExpression =
   loop
     parseTerm
-    ( \t e e' ->
+    ( \t e1 e2 ->
         case t of
-          PlusT -> Just (BinaryOperator Addition e e')
-          MinusT -> Just (BinaryOperator Subtraction e e')
+          PlusT -> Just (BinaryOperator Addition e1 e2)
+          MinusT -> Just (BinaryOperator Subtraction e1 e2)
           _ -> Nothing
     )
 
@@ -279,10 +280,10 @@ parseTerm :: ASTParser Expression
 parseTerm =
   loop
     parseFactor
-    ( \t e e' ->
+    ( \t e1 e2 ->
         case t of
-          AsteriskT -> Just (BinaryOperator Multiplication e e')
-          DivisionT -> Just (BinaryOperator Division e e')
+          AsteriskT -> Just (BinaryOperator Multiplication e1 e2)
+          DivisionT -> Just (BinaryOperator Division e1 e2)
           _ -> Nothing
     )
 

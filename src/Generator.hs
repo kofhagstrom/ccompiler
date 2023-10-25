@@ -48,10 +48,8 @@ instance Show Operation where
 
 data AssemblyError = InvalidAssembly deriving (Show)
 
-type AssemblyGenerator a = Parser Program [AssemblyError] a
-
 generateAssembly :: Program -> AssemblyProgram
-generateAssembly (Program [Fun funcName args (Just statements)]) =
+generateAssembly (Program [F (Fun funcName _ (Just statements))]) =
   AssemblyProgram
     [ AssemblyFunction
         funcName

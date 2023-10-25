@@ -154,12 +154,20 @@ lexNonLiteral [] = empty
 lexComment :: Lexer ()
 lexComment = (lexString "//" *> spanL (/= '\n')) $> ()
 
+lexMultiLineComment :: Lexer ()
+lexMultiLineComment = (lexString "/*" *> spanL (/= '*') *> lexString "*/") $> ()
+
 lexNewline :: Lexer ()
 lexNewline = lexChar '\n' $> ()
 
 lexNextToken :: Lexer Token
 lexNextToken =
-  ((lexNewline <|> lexComment) >> lexNextToken)
+  ( ( lexNewline
+        <|> lexComment
+        <|> lexMultiLineComment
+    )
+      >> lexNextToken
+  )
     <|> (ws *> lexNonLiteral stringToToken <* ws)
     <|> lexLiteral
 

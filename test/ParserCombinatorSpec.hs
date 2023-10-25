@@ -50,6 +50,22 @@ spec = do
                   )
               )
           ]
+    it "multi_line_comment" $
+      parseHelper "int main() { /* here is a comment \n it continues here */ return 0;}"
+        `shouldBe` Program
+          [ F
+              ( Fun
+                  "main"
+                  []
+                  ( Just
+                      [ State
+                          ( Return
+                              (Constant 0)
+                          )
+                      ]
+                  )
+              )
+          ]
   describe "week_1" $ do
     it "return_0" $
       parseHelper "int main(){return 0;}"

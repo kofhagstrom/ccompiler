@@ -23,12 +23,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                           )
                       ]
                   )
@@ -39,12 +40,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                           )
                       ]
                   )
@@ -55,12 +57,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                           )
                       ]
                   )
@@ -72,12 +75,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                           )
                       ]
                   )
@@ -88,12 +92,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 2)
+                              (Constant (ConstantInt 2))
                           )
                       ]
                   )
@@ -104,12 +109,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 100)
+                              (Constant (ConstantInt 100))
                           )
                       ]
                   )
@@ -120,12 +126,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                           )
                       ]
                   )
@@ -136,12 +143,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                           )
                       ]
                   )
@@ -153,12 +161,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator BitwiseComplement (Constant 12))
+                              (UnaryOperator BitwiseComplement (Constant (ConstantInt 12)))
                           )
                       ]
                   )
@@ -169,12 +178,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator BitwiseComplement (Constant 0))
+                              (UnaryOperator BitwiseComplement (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -185,12 +195,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator LogicalNegation (UnaryOperator Negation (Constant 3)))
+                              (UnaryOperator LogicalNegation (UnaryOperator Negation (Constant (ConstantInt 3))))
                           )
                       ]
                   )
@@ -201,12 +212,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator Negation (UnaryOperator BitwiseComplement (Constant 0)))
+                              (UnaryOperator Negation (UnaryOperator BitwiseComplement (Constant (ConstantInt 0))))
                           )
                       ]
                   )
@@ -217,12 +229,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator LogicalNegation (Constant 5))
+                              (UnaryOperator LogicalNegation (Constant (ConstantInt 5)))
                           )
                       ]
                   )
@@ -233,12 +246,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator LogicalNegation (Constant 0))
+                              (UnaryOperator LogicalNegation (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -249,12 +263,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator Negation (Constant 5))
+                              (UnaryOperator Negation (Constant (ConstantInt 5)))
                           )
                       ]
                   )
@@ -266,12 +281,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Addition (Constant 1) (Constant 2))
+                              (BinaryOperator Addition (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -282,6 +298,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -289,8 +306,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Subtraction
-                                  (BinaryOperator Subtraction (Constant 1) (Constant 2))
-                                  (Constant 3)
+                                  (BinaryOperator Subtraction (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
+                                  (Constant (ConstantInt 3))
                               )
                           )
                       ]
@@ -302,6 +319,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -309,8 +327,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Division
-                                  (BinaryOperator Division (Constant 6) (Constant 3))
-                                  (Constant 2)
+                                  (BinaryOperator Division (Constant (ConstantInt 6)) (Constant (ConstantInt 3)))
+                                  (Constant (ConstantInt 2))
                               )
                           )
                       ]
@@ -322,12 +340,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Division (Constant 4) (Constant 2))
+                              (BinaryOperator Division (Constant (ConstantInt 4)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -338,12 +357,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Division (UnaryOperator Negation (Constant 12)) (Constant 5))
+                              (BinaryOperator Division (UnaryOperator Negation (Constant (ConstantInt 12))) (Constant (ConstantInt 5)))
                           )
                       ]
                   )
@@ -354,12 +374,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Multiplication (Constant 2) (Constant 3))
+                              (BinaryOperator Multiplication (Constant (ConstantInt 2)) (Constant (ConstantInt 3)))
                           )
                       ]
                   )
@@ -370,6 +391,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -377,8 +399,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Multiplication
-                                  (Constant 2)
-                                  (BinaryOperator Addition (Constant 3) (Constant 4))
+                                  (Constant (ConstantInt 2))
+                                  (BinaryOperator Addition (Constant (ConstantInt 3)) (Constant (ConstantInt 4)))
                               )
                           )
                       ]
@@ -390,6 +412,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -397,8 +420,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Addition
-                                  (Constant 2)
-                                  (BinaryOperator Multiplication (Constant 3) (Constant 4))
+                                  (Constant (ConstantInt 2))
+                                  (BinaryOperator Multiplication (Constant (ConstantInt 3)) (Constant (ConstantInt 4)))
                               )
                           )
                       ]
@@ -410,12 +433,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Subtraction (Constant 2) (UnaryOperator Negation (Constant 1)))
+                              (BinaryOperator Subtraction (Constant (ConstantInt 2)) (UnaryOperator Negation (Constant (ConstantInt 1))))
                           )
                       ]
                   )
@@ -426,12 +450,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Subtraction (Constant 2) (UnaryOperator Negation (Constant 1)))
+                              (BinaryOperator Subtraction (Constant (ConstantInt 2)) (UnaryOperator Negation (Constant (ConstantInt 1))))
                           )
                       ]
                   )
@@ -442,6 +467,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -449,8 +475,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Addition
-                                  (UnaryOperator BitwiseComplement (Constant 2))
-                                  (Constant 3)
+                                  (UnaryOperator BitwiseComplement (Constant (ConstantInt 2)))
+                                  (Constant (ConstantInt 3))
                               )
                           )
                       ]
@@ -462,6 +488,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -469,7 +496,7 @@ spec = do
                           ( Return
                               ( UnaryOperator
                                   BitwiseComplement
-                                  (BinaryOperator Addition (Constant 1) (Constant 1))
+                                  (BinaryOperator Addition (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
                               )
                           )
                       ]
@@ -482,12 +509,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalAnd (Constant 1) (Constant 0))
+                              (BinaryOperator LogicalAnd (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -498,12 +526,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalAnd (Constant 1) (Constant 1))
+                              (BinaryOperator LogicalAnd (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
                           )
                       ]
                   )
@@ -514,12 +543,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Equality (Constant 1) (Constant 2))
+                              (BinaryOperator Equality (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -530,12 +560,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Equality (Constant 1) (Constant 1))
+                              (BinaryOperator Equality (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
                           )
                       ]
                   )
@@ -546,12 +577,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Equality (Constant 1) (Constant 1))
+                              (BinaryOperator Equality (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
                           )
                       ]
                   )
@@ -562,12 +594,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThan (Constant 2) (Constant 1))
+                              (BinaryOperator LessThan (Constant (ConstantInt 2)) (Constant (ConstantInt 1)))
                           )
                       ]
                   )
@@ -578,12 +611,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThanOrEqual (Constant 1) (Constant 2))
+                              (BinaryOperator GreaterThanOrEqual (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -594,12 +628,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThanOrEqual (Constant 1) (Constant 1))
+                              (BinaryOperator GreaterThanOrEqual (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
                           )
                       ]
                   )
@@ -610,12 +645,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThan (Constant 1) (Constant 2))
+                              (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -626,12 +662,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThan (Constant 1) (Constant 0))
+                              (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -642,12 +679,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThanOrEqual (Constant 1) (UnaryOperator Negation (Constant 1)))
+                              (BinaryOperator LessThanOrEqual (Constant (ConstantInt 1)) (UnaryOperator Negation (Constant (ConstantInt 1))))
                           )
                       ]
                   )
@@ -658,12 +696,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThanOrEqual (Constant 0) (Constant 2))
+                              (BinaryOperator LessThanOrEqual (Constant (ConstantInt 0)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -674,12 +713,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThan (Constant 2) (Constant 1))
+                              (BinaryOperator LessThan (Constant (ConstantInt 2)) (Constant (ConstantInt 1)))
                           )
                       ]
                   )
@@ -690,12 +730,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThan (Constant 1) (Constant 2))
+                              (BinaryOperator LessThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
                           )
                       ]
                   )
@@ -706,12 +747,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Inequality (Constant 0) (Constant 0))
+                              (BinaryOperator Inequality (Constant (ConstantInt 0)) (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -722,12 +764,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Inequality (UnaryOperator Negation (Constant 1)) (UnaryOperator Negation (Constant 0)))
+                              (BinaryOperator Inequality (UnaryOperator Negation (Constant (ConstantInt 1))) (UnaryOperator Negation (Constant (ConstantInt 0))))
                           )
                       ]
                   )
@@ -738,12 +781,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalOr (Constant 0) (Constant 0))
+                              (BinaryOperator LogicalOr (Constant (ConstantInt 0)) (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -754,12 +798,13 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalOr (Constant 1) (Constant 0))
+                              (BinaryOperator LogicalOr (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
                           )
                       ]
                   )
@@ -770,6 +815,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -777,8 +823,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   LogicalOr
-                                  (Constant 1)
-                                  (BinaryOperator LogicalAnd (Constant 0) (Constant 2))
+                                  (Constant (ConstantInt 1))
+                                  (BinaryOperator LogicalAnd (Constant (ConstantInt 0)) (Constant (ConstantInt 2)))
                               )
                           )
                       ]
@@ -790,6 +836,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -797,8 +844,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   LogicalAnd
-                                  (BinaryOperator LogicalOr (Constant 1) (Constant 0))
-                                  (Constant 0)
+                                  (BinaryOperator LogicalOr (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
+                                  (Constant (ConstantInt 0))
                               )
                           )
                       ]
@@ -810,6 +857,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -817,8 +865,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Equality
-                                  (Constant 2)
-                                  (BinaryOperator GreaterThan (Constant 2) (Constant 0))
+                                  (Constant (ConstantInt 2))
+                                  (BinaryOperator GreaterThan (Constant (ConstantInt 2)) (Constant (ConstantInt 0)))
                               )
                           )
                       ]
@@ -830,6 +878,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -837,8 +886,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   LogicalOr
-                                  (BinaryOperator Equality (Constant 2) (Constant 2))
-                                  (Constant 0)
+                                  (BinaryOperator Equality (Constant (ConstantInt 2)) (Constant (ConstantInt 2)))
+                                  (Constant (ConstantInt 0))
                               )
                           )
                       ]
@@ -850,10 +899,11 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Expression
                               ( Just
@@ -862,9 +912,9 @@ spec = do
                                       ( BinaryOperator
                                           LogicalOr
                                           (Variable "a")
-                                          (Assign "a" (Constant 3))
+                                          (Assign "a" (Constant (ConstantInt 3)))
                                       )
-                                      (Assign "a" (Constant 4))
+                                      (Assign "a" (Constant (ConstantInt 4)))
                                   )
                               )
                           ),
@@ -878,15 +928,16 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Expression
                               ( Just
-                                  (BinaryOperator LogicalAnd (Variable "a") (Assign "b" (Constant 5)))
+                                  (BinaryOperator LogicalAnd (Variable "a") (Assign "b" (Constant (ConstantInt 5))))
                               )
                           ),
                         State (Return (Variable "b"))
@@ -899,18 +950,19 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 1))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Expression
                               ( Just
                                   ( BinaryOperator
                                       LogicalOr
                                       (Variable "a")
-                                      (Assign "b" (Constant 5))
+                                      (Assign "b" (Constant (ConstantInt 5)))
                                   )
                               )
                           ),
@@ -925,11 +977,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" Nothing),
-                        State (Expression (Just (Assign "a" (Constant 2)))),
+                      [ Declaration (Declare CInt "a" Nothing),
+                        State (Expression (Just (Assign "a" (Constant (ConstantInt 2))))),
                         State (Return (Variable "a"))
                       ]
                   )
@@ -940,11 +993,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" Nothing),
-                        Declaration (Declare "b" (Just (Assign "a" (Constant 0)))),
+                      [ Declaration (Declare CInt "a" Nothing),
+                        Declaration (Declare CInt "b" (Just (Assign "a" (Constant (ConstantInt 0))))),
                         State (Return (Variable "b"))
                       ]
                   )
@@ -955,11 +1009,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" Nothing),
-                        Declaration (Declare "b" Nothing),
+                      [ Declaration (Declare CInt "a" Nothing),
+                        Declaration (Declare CInt "b" Nothing),
                         State
                           ( Expression
                               ( Just
@@ -967,7 +1022,7 @@ spec = do
                                       "a"
                                       ( Assign
                                           "b"
-                                          (Constant 4)
+                                          (Constant (ConstantInt 4))
                                       )
                                   )
                               )
@@ -989,11 +1044,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" Nothing),
-                        Declaration (Declare "b" Nothing),
+                      [ Declaration (Declare CInt "a" Nothing),
+                        Declaration (Declare CInt "b" Nothing),
                         State
                           ( Expression
                               ( Just
@@ -1001,7 +1057,7 @@ spec = do
                                       "a"
                                       ( Assign
                                           "b"
-                                          (Constant 4)
+                                          (Constant (ConstantInt 4))
                                       )
                                   )
                               )
@@ -1023,6 +1079,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -1035,11 +1092,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 1))),
-                        Declaration (Declare "b" (Just (Constant 2))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 2)))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1057,11 +1115,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" Nothing),
-                        State (Return (Constant 0))
+                      [ Declaration (Declare CInt "a" Nothing),
+                        State (Return (Constant (ConstantInt 0)))
                       ]
                   )
               )
@@ -1071,10 +1130,11 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 2))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 2)))),
                         State (Return (Variable "a"))
                       ]
                   )
@@ -1085,6 +1145,7 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
@@ -1093,12 +1154,12 @@ spec = do
                               ( Just
                                   ( BinaryOperator
                                       Addition
-                                      (Constant 2)
-                                      (Constant 2)
+                                      (Constant (ConstantInt 2))
+                                      (Constant (ConstantInt 2))
                                   )
                               )
                           ),
-                        State (Return (Constant 0))
+                        State (Return (Constant (ConstantInt 0)))
                       ]
                   )
               )
@@ -1109,19 +1170,20 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Expression
                               ( Just
                                   ( Assign
                                       "a"
                                       ( ConditionalExpression
-                                          (Constant 1)
-                                          (Constant 2)
-                                          (Constant 3)
+                                          (Constant (ConstantInt 1))
+                                          (Constant (ConstantInt 2))
+                                          (Constant (ConstantInt 3))
                                       )
                                   )
                               )
@@ -1136,11 +1198,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant 1) (Constant 2)) (Constant 3) (Constant 4)))),
-                        Declaration (Declare "b" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant 1) (Constant 2)) (Constant 5) (Constant 6)))),
+                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2))) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))))),
+                        Declaration (Declare CInt "b" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2))) (Constant (ConstantInt 5)) (Constant (ConstantInt 6))))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1158,21 +1221,22 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 1))),
-                        Declaration (Declare "b" (Just (Constant 2))),
-                        Declaration (Declare "flag" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 2)))),
+                        Declaration (Declare CInt "flag" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Return
                               ( ConditionalExpression
                                   (BinaryOperator GreaterThan (Variable "a") (Variable "b"))
-                                  (Constant 5)
+                                  (Constant (ConstantInt 5))
                                   ( ConditionalExpression
                                       (Variable "flag")
-                                      (Constant 6)
-                                      (Constant 7)
+                                      (Constant (ConstantInt 6))
+                                      (Constant (ConstantInt 7))
                                   )
                               )
                           )
@@ -1185,11 +1249,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (ConditionalExpression (Constant 1) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
-                        Declaration (Declare "b" (Just (ConditionalExpression (Constant 0) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
+                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (Constant (ConstantInt 1)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
+                        Declaration (Declare CInt "b" (Just (ConditionalExpression (Constant (ConstantInt 0)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1207,11 +1272,12 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (ConditionalExpression (Constant 1) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
-                        Declaration (Declare "b" (Just (ConditionalExpression (Constant 0) (ConditionalExpression (Constant 2) (Constant 3) (Constant 4)) (Constant 5)))),
+                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (Constant (ConstantInt 1)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
+                        Declaration (Declare CInt "b" (Just (ConditionalExpression (Constant (ConstantInt 0)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1229,16 +1295,17 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Return
                               ( ConditionalExpression
-                                  (BinaryOperator GreaterThan (Variable "a") (UnaryOperator Negation (Constant 1)))
-                                  (Constant 4)
-                                  (Constant 5)
+                                  (BinaryOperator GreaterThan (Variable "a") (UnaryOperator Negation (Constant (ConstantInt 1))))
+                                  (Constant (ConstantInt 4))
+                                  (Constant (ConstantInt 5))
                               )
                           )
                       ]
@@ -1250,18 +1317,19 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 1))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Expression
                               ( Just
                                   ( ConditionalExpression
                                       (Variable "a")
-                                      (Assign "b" (Constant 1))
-                                      (Assign "b" (Constant 2))
+                                      (Assign "b" (Constant (ConstantInt 1)))
+                                      (Assign "b" (Constant (ConstantInt 2)))
                                   )
                               )
                           ),
@@ -1275,18 +1343,19 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Expression
                               ( Just
                                   ( ConditionalExpression
                                       (Variable "a")
-                                      (Assign "b" (Constant 1))
-                                      (Assign "b" (Constant 2))
+                                      (Assign "b" (Constant (ConstantInt 1)))
+                                      (Assign "b" (Constant (ConstantInt 2)))
                                   )
                               )
                           ),
@@ -1300,15 +1369,16 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Return (Constant 1))
-                              (Just (Return (Constant 2)))
+                              (Return (Constant (ConstantInt 1)))
+                              (Just (Return (Constant (ConstantInt 2))))
                           )
                       ]
                   )
@@ -1319,19 +1389,20 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 1))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant 1))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
                               ( Just
                                   ( Conditional
                                       (Variable "b")
-                                      (Expression (Just (Assign "b" (Constant 2))))
+                                      (Expression (Just (Assign "b" (Constant (ConstantInt 2)))))
                                       Nothing
                                   )
                               )
@@ -1346,19 +1417,20 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
-                        Declaration (Declare "b" (Just (Constant 1))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 1)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant 1))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
                               ( Just
                                   ( Conditional
                                       (Variable "b")
-                                      (Expression (Just (Assign "b" (Constant 2))))
+                                      (Expression (Just (Assign "b" (Constant (ConstantInt 2)))))
                                       Nothing
                                   )
                               )
@@ -1373,19 +1445,20 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
-                        Declaration (Declare "b" (Just (Constant 1))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 1)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant 1))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
                               ( Just
                                   ( Conditional
                                       (Variable "b")
-                                      (Expression (Just (Assign "b" (Constant 2))))
+                                      (Expression (Just (Assign "b" (Constant (ConstantInt 2)))))
                                       Nothing
                                   )
                               )
@@ -1400,17 +1473,18 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
-                              (Constant 1)
+                              (Constant (ConstantInt 1))
                               ( Conditional
-                                  (Constant 2)
-                                  (Expression (Just (Assign "a" (Constant 3))))
-                                  (Just (Expression (Just (Assign "a" (Constant 4)))))
+                                  (Constant (ConstantInt 2))
+                                  (Expression (Just (Assign "a" (Constant (ConstantInt 3)))))
+                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt 4))))))
                               )
                               Nothing
                           ),
@@ -1424,17 +1498,18 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
-                              (Constant 1)
+                              (Constant (ConstantInt 1))
                               ( Conditional
-                                  (Constant 0)
-                                  (Expression (Just (Assign "a" (Constant 3))))
-                                  (Just (Expression (Just (Assign "a" (Constant 4)))))
+                                  (Constant (ConstantInt 0))
+                                  (Expression (Just (Assign "a" (Constant (ConstantInt 3)))))
+                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt 4))))))
                               )
                               Nothing
                           ),
@@ -1448,19 +1523,20 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
-                              (Constant 0)
+                              (Constant (ConstantInt 0))
                               ( Conditional
-                                  (Constant 0)
-                                  (Expression (Just (Assign "a" (Constant 3))))
-                                  (Just (Expression (Just (Assign "a" (Constant 4)))))
+                                  (Constant (ConstantInt 0))
+                                  (Expression (Just (Assign "a" (Constant (ConstantInt 3)))))
+                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt 4))))))
                               )
-                              (Just (Expression (Just (Assign "a" (Constant 1)))))
+                              (Just (Expression (Just (Assign "a" (Constant (ConstantInt 1))))))
                           ),
                         State (Return (Variable "a"))
                       ]
@@ -1472,15 +1548,16 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant 1))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
                               Nothing
                           ),
                         State (Return (Variable "b"))
@@ -1493,15 +1570,16 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 1))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant 1))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
                               Nothing
                           ),
                         State (Return (Variable "b"))
@@ -1514,22 +1592,23 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "a" (Just (Constant 0))),
-                        Declaration (Declare "b" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "a" (Constant 2))))
-                              (Just (Expression (Just (Assign "a" (Constant 3)))))
+                              (Expression (Just (Assign "a" (Constant (ConstantInt 2)))))
+                              (Just (Expression (Just (Assign "a" (Constant (ConstantInt 3))))))
                           ),
                         State
                           ( Conditional
                               (Variable "b")
-                              (Expression (Just (Assign "b" (Constant 4))))
-                              (Just (Expression (Just (Assign "b" (Constant 5)))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt 4)))))
+                              (Just (Expression (Just (Assign "b" (Constant (ConstantInt 5))))))
                           ),
                         State
                           ( Return
@@ -1549,21 +1628,22 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "sum" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt 0)))),
                         State
                           ( ForDecl
-                              (Declare "i" (Just (Constant 0)))
-                              (Just (BinaryOperator LessThan (Variable "i") (Constant 10)))
+                              (Declare CInt "i" (Just (Constant (ConstantInt 0))))
+                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt 10))))
                               ( Just
                                   ( Assign
                                       "i"
                                       ( BinaryOperator
                                           Addition
                                           (Variable "i")
-                                          (Constant 1)
+                                          (Constant (ConstantInt 1))
                                       )
                                   )
                               )
@@ -1586,7 +1666,7 @@ spec = do
                                           ( BinaryOperator
                                               GreaterThan
                                               (Variable "sum")
-                                              (Constant 10)
+                                              (Constant (ConstantInt 10))
                                           )
                                           Break
                                           Nothing
@@ -1604,15 +1684,16 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "sum" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt 0)))),
                         State
                           ( ForDecl
-                              (Declare "i" (Just (Constant 0)))
-                              (Just (BinaryOperator LessThan (Variable "i") (Constant 10)))
-                              (Just (Assign "i" (BinaryOperator Addition (Variable "i") (Constant 1))))
+                              (Declare CInt "i" (Just (Constant (ConstantInt 0))))
+                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt 10))))
+                              (Just (Assign "i" (BinaryOperator Addition (Variable "i") (Constant (ConstantInt 1)))))
                               ( Compound
                                   [ State
                                       ( Conditional
@@ -1620,8 +1701,8 @@ spec = do
                                               Inequality
                                               ( BinaryOperator
                                                   Multiplication
-                                                  (BinaryOperator Division (Variable "sum") (Constant 2))
-                                                  (Constant 2)
+                                                  (BinaryOperator Division (Variable "sum") (Constant (ConstantInt 2)))
+                                                  (Constant (ConstantInt 2))
                                               )
                                               (Variable "sum")
                                           )
@@ -1654,14 +1735,15 @@ spec = do
         `shouldBe` Program
           [ F
               ( Fun
+                  CInt
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare "sum" (Just (Constant 0))),
+                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt 0)))),
                         State
                           ( ForDecl
-                              (Declare "i" (Just (Constant 0)))
-                              (Just (BinaryOperator LessThan (Variable "i") (Constant 10)))
+                              (Declare CInt "i" (Just (Constant (ConstantInt 0))))
+                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt 10))))
                               Nothing
                               ( Compound
                                   [ State
@@ -1672,14 +1754,14 @@ spec = do
                                                   ( BinaryOperator
                                                       Addition
                                                       (Variable "i")
-                                                      (Constant 1)
+                                                      (Constant (ConstantInt 1))
                                                   )
                                               )
                                           )
                                       ),
                                     State
                                       ( Conditional
-                                          ( BinaryOperator Equality (Variable "i") (Constant 2)
+                                          ( BinaryOperator Equality (Variable "i") (Constant (ConstantInt 2))
                                           )
                                           Continue
                                           Nothing

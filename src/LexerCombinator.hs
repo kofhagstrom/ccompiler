@@ -4,6 +4,7 @@ module LexerCombinator
     Literal (..),
     lexNextToken,
     lexFile,
+    LexError (..),
   )
 where
 
@@ -46,6 +47,7 @@ data Token
 
 data Keyword
   = IntKW
+  | StringKW
   | ReturnKW
   | IfKW
   | ElseKW
@@ -69,6 +71,7 @@ type Lexer a = Parser String [LexError] a
 stringToToken :: [(String, Token)]
 stringToToken =
   [ ("int", KeywordT IntKW),
+    ("string", KeywordT StringKW),
     ("if", KeywordT IfKW),
     ("else", KeywordT ElseKW),
     ("return", KeywordT ReturnKW),

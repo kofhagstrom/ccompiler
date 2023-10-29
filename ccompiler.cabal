@@ -29,6 +29,7 @@ library
       LexerCombinator
       Parser
       ParserCombinator
+      Compiler
   other-modules:
       Paths_ccompiler
   hs-source-dirs:

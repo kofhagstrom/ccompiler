@@ -12,19 +12,40 @@ module ParserCombinator
     BlockItem (..),
     Declaration (..),
     TopLevelItem (..),
+    ParseError (..),
+    Constant (..),
+    CType (..),
   )
 where
 
 import Control.Applicative
-  ( Alternative (empty, (<|>)),
+  ( Alternative
+      ( empty,
+        (<|>)
+      ),
     many,
     optional,
   )
 import Data.Functor (($>))
 import Data.Maybe (maybeToList)
 import LexerCombinator
-  ( Keyword (BreakKW, ContinueKW, DoKW, ElseKW, ForKW, IfKW, IntKW, ReturnKW, WhileKW),
-    Literal (IdentifierL, IntL),
+  ( Keyword
+      ( BreakKW,
+        ContinueKW,
+        DoKW,
+        ElseKW,
+        ForKW,
+        IfKW,
+        IntKW,
+        ReturnKW,
+        StringKW,
+        WhileKW
+      ),
+    Literal
+      ( IdentifierL,
+        IntL,
+        StringL
+      ),
     Token (..),
   )
 import Parser (Parser (..))
@@ -43,11 +64,13 @@ newtype Program = Program [TopLevelItem] deriving (Show, Eq)
 
 data TopLevelItem = F FuncDeclaration | D Declaration deriving (Show, Eq)
 
-data FuncDeclaration = Fun String [String] (Maybe [BlockItem]) deriving (Show, Eq)
+data CType = CInt | CString deriving (Show, Eq)
+
+data FuncDeclaration = Fun CType String [String] (Maybe [BlockItem]) deriving (Show, Eq)
 
 data BlockItem = State Statement | Declaration Declaration deriving (Show, Eq)
 
-data Declaration = Declare String (Maybe Expression) deriving (Show, Eq)
+data Declaration = Declare CType String (Maybe Expression) deriving (Show, Eq)
 
 data Statement
   = Return Expression
@@ -65,11 +88,16 @@ data Statement
 data Expression
   = BinaryOperator BinaryOperator Expression Expression
   | UnaryOperator UnaryOperator Expression
-  | Constant Integer
+  | Constant Constant
   | Variable String
   | Assign String Expression
   | ConditionalExpression Expression Expression Expression
   | FunCall String [Expression]
+  deriving (Show, Eq)
+
+data Constant
+  = ConstantInt Integer
+  | ConstantString String
   deriving (Show, Eq)
 
 data BinaryOperator
@@ -97,23 +125,32 @@ data UnaryOperator
 parseProgram :: ASTParser Program
 parseProgram = Program <$> many (F <$> parseFuncDeclaration <|> D <$> parseDeclaration)
 
--- <function> ::= "int" <id> "(" [ "int" <id> { "," "int" <id> } ] ")" ( "{" { <block-item> } "}" | ";" )
+parseType :: ASTParser CType
+parseType = do
+  t <- parseOneOfTheseTokens [KeywordT IntKW, KeywordT StringKW]
+  case t of
+    KeywordT IntKW -> return CInt
+    KeywordT StringKW -> return CString
+    _ -> empty
+
+-- <function> ::= ( "int" | "string" | "bool" ) <id> "(" [ "int" <id> { "," "int" <id> } ] ")" ( "{" { <block-item> } "}" | ";" )
 parseFuncDeclaration :: ASTParser FuncDeclaration
 parseFuncDeclaration = do
-  identifier <- parseTokens [KeywordT IntKW] *> parseIdentifierLiteral
+  returnType <- parseType
+  identifier <- parseIdentifierLiteral
   firstArg <- parseTokens [OpenParenthesisT] *> optional (parseTokens [KeywordT IntKW] *> parseIdentifierLiteral)
   args <- many (parseTokens [CommaT, KeywordT IntKW] *> parseIdentifierLiteral) <* parseTokens [CloseParenthesisT, OpenBraceT]
-  Fun identifier (maybeToList firstArg ++ args) <$> (optional (many parseBlockItem) <* parseTokens [CloseBraceT])
+  Fun returnType identifier (maybeToList firstArg ++ args) <$> (optional (many parseBlockItem) <* parseTokens [CloseBraceT])
 
 -- <block-item> ::= <statement> | <declaration>
 parseBlockItem :: ASTParser BlockItem
 parseBlockItem = State <$> parseStatement <|> Declaration <$> parseDeclaration
 
--- <declaration> ::= "int" <id> [ = <exp> ] ";"
+-- <declaration> ::= ( "int" | "string" | "bool" ) <id> [ = <exp> ] ";"
 parseDeclaration :: ASTParser Declaration
 parseDeclaration =
   do
-    identifier <- parseTokens [KeywordT IntKW] *> (Declare <$> parseIdentifierLiteral)
+    identifier <- Declare <$> parseType <*> parseIdentifierLiteral
     expr <- optional (parseTokens [AssignmentT] *> parseExpression) <* parseTokens [SemiColonT]
     return (identifier expr)
 
@@ -210,8 +247,12 @@ parseExpression =
 parseConditionalExpression :: ASTParser Expression
 parseConditionalExpression =
   ( do
-      (expr, expr') <- (,) <$> parseLogicalOrExpression <* parseTokens [QuestionMarkT] <*> (parseExpression <* parseTokens [ColonT])
-      ConditionalExpression expr expr' <$> parseConditionalExpression
+      (logicalOrExpr, expr, condExpr) <-
+        (,,)
+          <$> (parseLogicalOrExpression <* parseTokens [QuestionMarkT])
+          <*> (parseExpression <* parseTokens [ColonT])
+          <*> parseConditionalExpression
+      return (ConditionalExpression logicalOrExpr expr condExpr)
   )
     <|> parseLogicalOrExpression
 
@@ -287,7 +328,7 @@ parseTerm =
           _ -> Nothing
     )
 
--- <factor> ::= <function-call> | "(" <exp> ")" | <unary_op> <factor> | <int> | <id>
+-- <factor> ::= <function-call> | "(" <exp> ")" | <unary_op> <factor> | <int> | <string> | <bool> | <id>
 parseFactor :: ASTParser Expression
 parseFactor =
   parseFunctionCall
@@ -299,22 +340,21 @@ parseFactor =
               TildeT -> UnaryOperator BitwiseComplement <$> parseFactor
               _ -> empty
         )
-    <|> Constant <$> parseIntLiteral
-    <|> Variable <$> parseIdentifierLiteral
+    <|> (Constant <$> parseConstant)
+    <|> (Variable <$> parseIdentifierLiteral)
 
 -- <function-call> ::= id "(" [ <exp> { "," <exp> } ] ")"
 parseFunctionCall :: ASTParser Expression
 parseFunctionCall = do
-  identifier <- parseIdentifierLiteral
-  _ <- parseTokens [OpenParenthesisT]
+  identifier <- parseIdentifierLiteral <* parseTokens [OpenParenthesisT]
   firstArg <- optional parseExpression
   args <- many (parseTokens [CommaT] *> parseExpression)
-  _ <- parseTokens [CloseParenthesisT]
-  return (FunCall identifier (maybeToList firstArg ++ args))
+  parseTokens [CloseParenthesisT] $> FunCall identifier (maybeToList firstArg ++ args)
 
-parseIntLiteral :: ASTParser Integer
-parseIntLiteral = Parser $ \case
-  (LiteralT (IntL value) : ts) -> Right (value, ts)
+parseConstant :: ASTParser Constant
+parseConstant = Parser $ \case
+  (LiteralT (IntL value) : ts) -> Right (ConstantInt value, ts)
+  (LiteralT (StringL value) : ts) -> Right (ConstantString value, ts)
   ts@(t : _) -> Left ([UnexpectedError ("Expected LiteralT (IntL _), got " ++ show t)], ts)
   [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
 

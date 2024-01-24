@@ -12,7 +12,6 @@ module ParserCombinator
     BlockItem (..),
     Declaration (..),
     TopLevelItem (..),
-    ParseError (..),
     Constant (..),
     CType (..),
   )
@@ -48,17 +47,11 @@ import LexerCombinator
       ),
     Token (..),
   )
-import Parser (Parser (..))
+import Parser (Parser (..), ParseError (..))
 
-type ASTParser a = Parser [Token] [ParseError] a
+type ASTParser a = Parser [Token] a
 
-instance Show ParseError where
-  show (UnexpectedTokenError t1 t2) = "Expected " ++ show t1 ++ ", got " ++ show t2 ++ ".\n"
-  show (UnexpectedError msg) = msg ++ "\n"
 
-data ParseError
-  = UnexpectedTokenError Token Token
-  | UnexpectedError String
 
 newtype Program = Program [TopLevelItem] deriving (Show, Eq)
 
@@ -96,7 +89,7 @@ data Expression
   deriving (Show, Eq)
 
 data Constant
-  = ConstantInt Integer
+  = ConstantInt String
   | ConstantString String
   deriving (Show, Eq)
 
@@ -379,7 +372,7 @@ parseToken t = Parser f
     f ts@(t' : rest) =
       if t' == t
         then Right (t', rest)
-        else Left ([UnexpectedTokenError t t'], ts)
+        else Left ([UnexpectedError ""], ts)
     f [] = Left ([UnexpectedError ("Expected " ++ show t ++ ", got nothing.")], [])
 
 getNextToken :: ASTParser Token
@@ -389,7 +382,7 @@ getNextToken = Parser $ \case
 
 -- parses a grammar of type <A> ::= <B> { ("a" | "b" | ... ) <B> }
 -- parserB is a parser which parses Bs, and tokenToOperator is a function which matches tokens to operators
-loop :: Parser [Token] [ParseError] b -> (Token -> b -> b -> Maybe b) -> Parser [Token] [ParseError] b
+loop :: Parser [Token] b -> (Token -> b -> b -> Maybe b) -> Parser [Token] b
 loop parserB tokenToOperator = parserB >>= loop'
   where
     loop' e =

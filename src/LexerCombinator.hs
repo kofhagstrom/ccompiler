@@ -2,18 +2,17 @@ module LexerCombinator
   ( Keyword (..),
     Token (..),
     Literal (..),
-    lexNextToken,
-    lexFile,
-    LexError (..),
+    token,
+    tokens,
+    whitespace,
+    stringLiteral,
+    intLiteral,
+    literal,
   )
 where
 
 import Control.Applicative (Alternative (empty, (<|>)), many)
-import Data.Char (isAlpha, isDigit)
-import Data.Functor (($>))
-import Data.Monoid (Any (Any, getAny))
-import Parser (Parser (Parser))
-import Text.Read (readEither)
+import Parser (Parser, ignore, manyOf, noneOf, orElse, parse, parseWhile, skip)
 
 data Token
   = OpenBraceT
@@ -59,120 +58,114 @@ data Keyword
   deriving (Show, Eq)
 
 data Literal
-  = IntL Integer
+  = IntL String
   | StringL String
   | IdentifierL String
   deriving (Show, Eq)
 
-data LexError = UnexpectedError deriving (Show)
+type Lexer a = Parser String a
 
-type Lexer a = Parser String [LexError] a
+whitespace :: Lexer String
+whitespace = parseWhile (== ' ')
 
-stringToToken :: [(String, Token)]
-stringToToken =
-  [ ("int", KeywordT IntKW),
-    ("string", KeywordT StringKW),
-    ("if", KeywordT IfKW),
-    ("else", KeywordT ElseKW),
-    ("return", KeywordT ReturnKW),
-    ("for", KeywordT ForKW),
-    ("while", KeywordT WhileKW),
-    ("do", KeywordT DoKW),
-    ("break", KeywordT BreakKW),
-    ("continue", KeywordT ContinueKW),
-    ("==", LogicalEqualityT),
-    ("=", AssignmentT),
-    ("!=", NotEqualT),
-    ("!", BangT),
-    ("<=", LessThanOrEqualT),
-    ("<", LessThanT),
-    (">=", GreaterThanOrEqualT),
-    (">", GreaterThanT),
-    ("&&", AndT),
-    ("||", OrT),
-    ("(", OpenParenthesisT),
-    (")", CloseParenthesisT),
-    ("{", OpenBraceT),
-    ("}", CloseBraceT),
-    (";", SemiColonT),
-    ("-", MinusT),
-    ("~", TildeT),
-    ("+", PlusT),
-    ("*", AsteriskT),
-    ("/", DivisionT),
-    ("?", QuestionMarkT),
-    (":", ColonT),
-    (",", CommaT)
-  ]
+string :: Lexer Token
+string = do
+  skip "\""
+  o <- noneOf "\""
+  skip "\""
+  return . LiteralT . IdentifierL $ o
 
-spanL :: (Char -> Bool) -> Lexer String
-spanL f = Parser $ \input ->
-  let (str, rest) = span f input
-   in Right (str, rest)
+stringLiteral :: Lexer Token
+stringLiteral = do
+  o <- manyOf "abcdefghijklmnopqrstuvxyz_"
+  return . LiteralT . IdentifierL $ o
 
-ws :: Lexer String
-ws = spanL (== ' ')
+intLiteral :: Lexer Token
+intLiteral = do
+  o <- manyOf "1234567890"
+  return . LiteralT . IntL $ o
 
-lexChar :: Char -> Lexer Char
-lexChar t = Parser f
+literal :: Lexer Token
+literal = do
+  ignore whitespace
+  output <- stringLiteral `orElse` intLiteral `orElse` string
+  ignore whitespace
+  return output
+
+nonLiteral :: Parser [Char] Token
+nonLiteral = nonLiteral' stringToToken
   where
-    f str@(c : rest) =
-      if c == t
-        then Right (c, rest)
-        else Left ([UnexpectedError], str)
-    f [] = Left ([UnexpectedError], [])
+    stringToToken =
+      [ ("int", KeywordT IntKW),
+        ("string", KeywordT StringKW),
+        ("if", KeywordT IfKW),
+        ("else", KeywordT ElseKW),
+        ("return", KeywordT ReturnKW),
+        ("for", KeywordT ForKW),
+        ("while", KeywordT WhileKW),
+        ("do", KeywordT DoKW),
+        ("break", KeywordT BreakKW),
+        ("continue", KeywordT ContinueKW),
+        ("==", LogicalEqualityT),
+        ("=", AssignmentT),
+        ("!=", NotEqualT),
+        ("!", BangT),
+        ("<=", LessThanOrEqualT),
+        ("<", LessThanT),
+        (">=", GreaterThanOrEqualT),
+        (">", GreaterThanT),
+        ("&&", AndT),
+        ("||", OrT),
+        ("(", OpenParenthesisT),
+        (")", CloseParenthesisT),
+        ("{", OpenBraceT),
+        ("}", CloseBraceT),
+        (";", SemiColonT),
+        ("-", MinusT),
+        ("~", TildeT),
+        ("+", PlusT),
+        ("*", AsteriskT),
+        ("/", DivisionT),
+        ("?", QuestionMarkT),
+        (":", ColonT),
+        (",", CommaT)
+      ]
+    nonLiteral' ((str, t) : rest) =
+      ( do
+          ignore $ parse str
+          return t
+      )
+        <|> nonLiteral' rest
+    nonLiteral' [] = empty
 
-lexString :: String -> Lexer String
-lexString = traverse lexChar
+comment :: Lexer String
+comment = do
+  skip "//"
+  parseWhile (/= '\n')
 
-isAllowedLiteralChar :: Char -> Bool
-isAllowedLiteralChar = getAny . foldMap (Any .) predicates
-  where
-    predicates = [isAlpha, flip elem "_"]
+multilineComment :: Lexer String
+multilineComment = do
+  skip "/*"
+  o <- noneOf "*"
+  skip "*/"
+  return o
 
-lexStringLiteral :: Lexer Token
-lexStringLiteral =
-  Parser
-    ( \input -> case span isAllowedLiteralChar input of
-        ("", rest) -> Left ([], rest)
-        (str, rest) -> Right (LiteralT (IdentifierL str), rest)
-    )
+newLine :: Lexer String
+newLine = parse "\n"
 
-lexIntLiteral :: Lexer Token
-lexIntLiteral =
-  Parser
-    ( \input -> case span isDigit input of
-        (str, rest) -> case readEither str of
-          Right i -> Right (LiteralT (IntL i), rest)
-          Left _ -> Left ([UnexpectedError], rest)
-    )
-
-lexLiteral :: Lexer Token
-lexLiteral = ws *> (lexStringLiteral <|> lexIntLiteral) <* ws
-
-lexNonLiteral :: [(String, Token)] -> Parser String [LexError] Token
-lexNonLiteral ((str, t) : rest) = (lexString str >> return t) <|> lexNonLiteral rest
-lexNonLiteral [] = empty
-
-lexComment :: Lexer ()
-lexComment = (lexString "//" *> spanL (/= '\n')) $> ()
-
-lexMultiLineComment :: Lexer ()
-lexMultiLineComment = (lexString "/*" *> spanL (/= '*') *> lexString "*/") $> ()
-
-lexNewline :: Lexer ()
-lexNewline = lexChar '\n' $> ()
-
-lexNextToken :: Lexer Token
-lexNextToken =
-  ( ( lexNewline
-        <|> lexComment
-        <|> lexMultiLineComment
-    )
-      >> lexNextToken
+token :: Lexer Token
+token =
+  ( do
+      ignore $ newLine <|> comment <|> multilineComment
+      token
   )
-    <|> (ws *> lexNonLiteral stringToToken <* ws)
-    <|> lexLiteral
+    <|> ( do
+            ignore whitespace
+            output <- nonLiteral
+            ignore whitespace
+            return output
+        )
+    <|> literal
 
-lexFile :: Lexer [Token]
-lexFile = many lexNextToken
+tokens :: Lexer [Token]
+tokens = many token

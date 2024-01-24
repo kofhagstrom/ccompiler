@@ -5,7 +5,7 @@ import Parser
 import Test.Hspec
 
 lexHelper :: String -> [Token]
-lexHelper str = case run lexFile str of
+lexHelper str = case run tokens str of
   Right (ts, _) -> ts
   Left e -> error (concatMap show e)
 
@@ -43,18 +43,18 @@ spec =
                      OpenBraceT,
                      LiteralT (IdentifierL "a"),
                      AssignmentT,
-                     LiteralT (IntL 1),
+                     LiteralT (IntL "1"),
                      QuestionMarkT,
-                     LiteralT (IntL 2),
+                     LiteralT (IntL "2"),
                      ColonT,
-                     LiteralT (IntL 3),
+                     LiteralT (IntL "3"),
                      SemiColonT,
                      KeywordT IfKW,
                      OpenParenthesisT,
                      LiteralT (IdentifierL "flag"),
                      CloseParenthesisT,
                      KeywordT ReturnKW,
-                     LiteralT (IntL 0),
+                     LiteralT (IntL "0"),
                      SemiColonT,
                      KeywordT ElseKW,
                      KeywordT IfKW,
@@ -62,11 +62,11 @@ spec =
                      LiteralT (IdentifierL "other_flag"),
                      CloseParenthesisT,
                      KeywordT ReturnKW,
-                     LiteralT (IntL 1),
+                     LiteralT (IntL "1"),
                      SemiColonT,
                      KeywordT ElseKW,
                      KeywordT ReturnKW,
-                     LiteralT (IntL 2),
+                     LiteralT (IntL "2"),
                      SemiColonT,
                      LiteralT (IdentifierL "a"),
                      LogicalEqualityT,

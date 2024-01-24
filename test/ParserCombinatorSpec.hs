@@ -6,7 +6,7 @@ import ParserCombinator
 import Test.Hspec
 
 parseHelper :: String -> Program
-parseHelper string = case run lexFile string of
+parseHelper string = case run tokens string of
   Right (tokens, _) -> case run parseProgram tokens of
     Right (ast, _) -> ast
     Left (es, ts) -> error (except es ++ "Remaining tokens: " ++ intercalate ", " (show <$> ts))
@@ -29,7 +29,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                           )
                       ]
                   )
@@ -46,7 +46,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                           )
                       ]
                   )
@@ -63,7 +63,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                           )
                       ]
                   )
@@ -81,7 +81,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                           )
                       ]
                   )
@@ -98,7 +98,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 2))
+                              (Constant (ConstantInt "2"))
                           )
                       ]
                   )
@@ -115,7 +115,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 100))
+                              (Constant (ConstantInt "100"))
                           )
                       ]
                   )
@@ -132,7 +132,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                           )
                       ]
                   )
@@ -149,7 +149,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                           )
                       ]
                   )
@@ -167,7 +167,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator BitwiseComplement (Constant (ConstantInt 12)))
+                              (UnaryOperator BitwiseComplement (Constant (ConstantInt "12")))
                           )
                       ]
                   )
@@ -184,7 +184,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator BitwiseComplement (Constant (ConstantInt 0)))
+                              (UnaryOperator BitwiseComplement (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -201,7 +201,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator LogicalNegation (UnaryOperator Negation (Constant (ConstantInt 3))))
+                              (UnaryOperator LogicalNegation (UnaryOperator Negation (Constant (ConstantInt "3"))))
                           )
                       ]
                   )
@@ -218,7 +218,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator Negation (UnaryOperator BitwiseComplement (Constant (ConstantInt 0))))
+                              (UnaryOperator Negation (UnaryOperator BitwiseComplement (Constant (ConstantInt "0"))))
                           )
                       ]
                   )
@@ -235,7 +235,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator LogicalNegation (Constant (ConstantInt 5)))
+                              (UnaryOperator LogicalNegation (Constant (ConstantInt "5")))
                           )
                       ]
                   )
@@ -252,7 +252,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator LogicalNegation (Constant (ConstantInt 0)))
+                              (UnaryOperator LogicalNegation (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -269,7 +269,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (UnaryOperator Negation (Constant (ConstantInt 5)))
+                              (UnaryOperator Negation (Constant (ConstantInt "5")))
                           )
                       ]
                   )
@@ -287,7 +287,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Addition (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
+                              (BinaryOperator Addition (Constant (ConstantInt "1")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -306,8 +306,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Subtraction
-                                  (BinaryOperator Subtraction (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
-                                  (Constant (ConstantInt 3))
+                                  (BinaryOperator Subtraction (Constant (ConstantInt "1")) (Constant (ConstantInt "2")))
+                                  (Constant (ConstantInt "3"))
                               )
                           )
                       ]
@@ -327,8 +327,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Division
-                                  (BinaryOperator Division (Constant (ConstantInt 6)) (Constant (ConstantInt 3)))
-                                  (Constant (ConstantInt 2))
+                                  (BinaryOperator Division (Constant (ConstantInt "6")) (Constant (ConstantInt "3")))
+                                  (Constant (ConstantInt "2"))
                               )
                           )
                       ]
@@ -346,7 +346,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Division (Constant (ConstantInt 4)) (Constant (ConstantInt 2)))
+                              (BinaryOperator Division (Constant (ConstantInt "4")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -363,7 +363,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Division (UnaryOperator Negation (Constant (ConstantInt 12))) (Constant (ConstantInt 5)))
+                              (BinaryOperator Division (UnaryOperator Negation (Constant (ConstantInt "12"))) (Constant (ConstantInt "5")))
                           )
                       ]
                   )
@@ -380,7 +380,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Multiplication (Constant (ConstantInt 2)) (Constant (ConstantInt 3)))
+                              (BinaryOperator Multiplication (Constant (ConstantInt "2")) (Constant (ConstantInt "3")))
                           )
                       ]
                   )
@@ -399,8 +399,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Multiplication
-                                  (Constant (ConstantInt 2))
-                                  (BinaryOperator Addition (Constant (ConstantInt 3)) (Constant (ConstantInt 4)))
+                                  (Constant (ConstantInt "2"))
+                                  (BinaryOperator Addition (Constant (ConstantInt "3")) (Constant (ConstantInt "4")))
                               )
                           )
                       ]
@@ -420,8 +420,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Addition
-                                  (Constant (ConstantInt 2))
-                                  (BinaryOperator Multiplication (Constant (ConstantInt 3)) (Constant (ConstantInt 4)))
+                                  (Constant (ConstantInt "2"))
+                                  (BinaryOperator Multiplication (Constant (ConstantInt "3")) (Constant (ConstantInt "4")))
                               )
                           )
                       ]
@@ -439,7 +439,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Subtraction (Constant (ConstantInt 2)) (UnaryOperator Negation (Constant (ConstantInt 1))))
+                              (BinaryOperator Subtraction (Constant (ConstantInt "2")) (UnaryOperator Negation (Constant (ConstantInt "1"))))
                           )
                       ]
                   )
@@ -456,7 +456,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Subtraction (Constant (ConstantInt 2)) (UnaryOperator Negation (Constant (ConstantInt 1))))
+                              (BinaryOperator Subtraction (Constant (ConstantInt "2")) (UnaryOperator Negation (Constant (ConstantInt "1"))))
                           )
                       ]
                   )
@@ -475,8 +475,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Addition
-                                  (UnaryOperator BitwiseComplement (Constant (ConstantInt 2)))
-                                  (Constant (ConstantInt 3))
+                                  (UnaryOperator BitwiseComplement (Constant (ConstantInt "2")))
+                                  (Constant (ConstantInt "3"))
                               )
                           )
                       ]
@@ -496,7 +496,7 @@ spec = do
                           ( Return
                               ( UnaryOperator
                                   BitwiseComplement
-                                  (BinaryOperator Addition (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
+                                  (BinaryOperator Addition (Constant (ConstantInt "1")) (Constant (ConstantInt "1")))
                               )
                           )
                       ]
@@ -515,7 +515,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalAnd (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
+                              (BinaryOperator LogicalAnd (Constant (ConstantInt "1")) (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -532,7 +532,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalAnd (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
+                              (BinaryOperator LogicalAnd (Constant (ConstantInt "1")) (Constant (ConstantInt "1")))
                           )
                       ]
                   )
@@ -549,7 +549,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Equality (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
+                              (BinaryOperator Equality (Constant (ConstantInt "1")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -566,7 +566,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Equality (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
+                              (BinaryOperator Equality (Constant (ConstantInt "1")) (Constant (ConstantInt "1")))
                           )
                       ]
                   )
@@ -583,7 +583,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Equality (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
+                              (BinaryOperator Equality (Constant (ConstantInt "1")) (Constant (ConstantInt "1")))
                           )
                       ]
                   )
@@ -600,7 +600,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThan (Constant (ConstantInt 2)) (Constant (ConstantInt 1)))
+                              (BinaryOperator LessThan (Constant (ConstantInt "2")) (Constant (ConstantInt "1")))
                           )
                       ]
                   )
@@ -617,7 +617,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThanOrEqual (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
+                              (BinaryOperator GreaterThanOrEqual (Constant (ConstantInt "1")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -634,7 +634,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThanOrEqual (Constant (ConstantInt 1)) (Constant (ConstantInt 1)))
+                              (BinaryOperator GreaterThanOrEqual (Constant (ConstantInt "1")) (Constant (ConstantInt "1")))
                           )
                       ]
                   )
@@ -651,7 +651,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
+                              (BinaryOperator GreaterThan (Constant (ConstantInt "1")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -668,7 +668,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
+                              (BinaryOperator GreaterThan (Constant (ConstantInt "1")) (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -685,7 +685,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThanOrEqual (Constant (ConstantInt 1)) (UnaryOperator Negation (Constant (ConstantInt 1))))
+                              (BinaryOperator LessThanOrEqual (Constant (ConstantInt "1")) (UnaryOperator Negation (Constant (ConstantInt "1"))))
                           )
                       ]
                   )
@@ -702,7 +702,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThanOrEqual (Constant (ConstantInt 0)) (Constant (ConstantInt 2)))
+                              (BinaryOperator LessThanOrEqual (Constant (ConstantInt "0")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -719,7 +719,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThan (Constant (ConstantInt 2)) (Constant (ConstantInt 1)))
+                              (BinaryOperator LessThan (Constant (ConstantInt "2")) (Constant (ConstantInt "1")))
                           )
                       ]
                   )
@@ -736,7 +736,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LessThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2)))
+                              (BinaryOperator LessThan (Constant (ConstantInt "1")) (Constant (ConstantInt "2")))
                           )
                       ]
                   )
@@ -753,7 +753,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Inequality (Constant (ConstantInt 0)) (Constant (ConstantInt 0)))
+                              (BinaryOperator Inequality (Constant (ConstantInt "0")) (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -770,7 +770,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator Inequality (UnaryOperator Negation (Constant (ConstantInt 1))) (UnaryOperator Negation (Constant (ConstantInt 0))))
+                              (BinaryOperator Inequality (UnaryOperator Negation (Constant (ConstantInt "1"))) (UnaryOperator Negation (Constant (ConstantInt "0"))))
                           )
                       ]
                   )
@@ -787,7 +787,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalOr (Constant (ConstantInt 0)) (Constant (ConstantInt 0)))
+                              (BinaryOperator LogicalOr (Constant (ConstantInt "0")) (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -804,7 +804,7 @@ spec = do
                   ( Just
                       [ State
                           ( Return
-                              (BinaryOperator LogicalOr (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
+                              (BinaryOperator LogicalOr (Constant (ConstantInt "1")) (Constant (ConstantInt "0")))
                           )
                       ]
                   )
@@ -823,8 +823,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   LogicalOr
-                                  (Constant (ConstantInt 1))
-                                  (BinaryOperator LogicalAnd (Constant (ConstantInt 0)) (Constant (ConstantInt 2)))
+                                  (Constant (ConstantInt "1"))
+                                  (BinaryOperator LogicalAnd (Constant (ConstantInt "0")) (Constant (ConstantInt "2")))
                               )
                           )
                       ]
@@ -844,8 +844,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   LogicalAnd
-                                  (BinaryOperator LogicalOr (Constant (ConstantInt 1)) (Constant (ConstantInt 0)))
-                                  (Constant (ConstantInt 0))
+                                  (BinaryOperator LogicalOr (Constant (ConstantInt "1")) (Constant (ConstantInt "0")))
+                                  (Constant (ConstantInt "0"))
                               )
                           )
                       ]
@@ -865,8 +865,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   Equality
-                                  (Constant (ConstantInt 2))
-                                  (BinaryOperator GreaterThan (Constant (ConstantInt 2)) (Constant (ConstantInt 0)))
+                                  (Constant (ConstantInt "2"))
+                                  (BinaryOperator GreaterThan (Constant (ConstantInt "2")) (Constant (ConstantInt "0")))
                               )
                           )
                       ]
@@ -886,8 +886,8 @@ spec = do
                           ( Return
                               ( BinaryOperator
                                   LogicalOr
-                                  (BinaryOperator Equality (Constant (ConstantInt 2)) (Constant (ConstantInt 2)))
-                                  (Constant (ConstantInt 0))
+                                  (BinaryOperator Equality (Constant (ConstantInt "2")) (Constant (ConstantInt "2")))
+                                  (Constant (ConstantInt "0"))
                               )
                           )
                       ]
@@ -903,7 +903,7 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Expression
                               ( Just
@@ -912,9 +912,9 @@ spec = do
                                       ( BinaryOperator
                                           LogicalOr
                                           (Variable "a")
-                                          (Assign "a" (Constant (ConstantInt 3)))
+                                          (Assign "a" (Constant (ConstantInt "3")))
                                       )
-                                      (Assign "a" (Constant (ConstantInt 4)))
+                                      (Assign "a" (Constant (ConstantInt "4")))
                                   )
                               )
                           ),
@@ -932,12 +932,12 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Expression
                               ( Just
-                                  (BinaryOperator LogicalAnd (Variable "a") (Assign "b" (Constant (ConstantInt 5))))
+                                  (BinaryOperator LogicalAnd (Variable "a") (Assign "b" (Constant (ConstantInt "5"))))
                               )
                           ),
                         State (Return (Variable "b"))
@@ -954,15 +954,15 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "1")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Expression
                               ( Just
                                   ( BinaryOperator
                                       LogicalOr
                                       (Variable "a")
-                                      (Assign "b" (Constant (ConstantInt 5)))
+                                      (Assign "b" (Constant (ConstantInt "5")))
                                   )
                               )
                           ),
@@ -982,7 +982,7 @@ spec = do
                   []
                   ( Just
                       [ Declaration (Declare CInt "a" Nothing),
-                        State (Expression (Just (Assign "a" (Constant (ConstantInt 2))))),
+                        State (Expression (Just (Assign "a" (Constant (ConstantInt "2"))))),
                         State (Return (Variable "a"))
                       ]
                   )
@@ -998,7 +998,7 @@ spec = do
                   []
                   ( Just
                       [ Declaration (Declare CInt "a" Nothing),
-                        Declaration (Declare CInt "b" (Just (Assign "a" (Constant (ConstantInt 0))))),
+                        Declaration (Declare CInt "b" (Just (Assign "a" (Constant (ConstantInt "0"))))),
                         State (Return (Variable "b"))
                       ]
                   )
@@ -1022,7 +1022,7 @@ spec = do
                                       "a"
                                       ( Assign
                                           "b"
-                                          (Constant (ConstantInt 4))
+                                          (Constant (ConstantInt "4"))
                                       )
                                   )
                               )
@@ -1057,7 +1057,7 @@ spec = do
                                       "a"
                                       ( Assign
                                           "b"
-                                          (Constant (ConstantInt 4))
+                                          (Constant (ConstantInt "4"))
                                       )
                                   )
                               )
@@ -1096,8 +1096,8 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 2)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "1")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "2")))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1120,7 +1120,7 @@ spec = do
                   []
                   ( Just
                       [ Declaration (Declare CInt "a" Nothing),
-                        State (Return (Constant (ConstantInt 0)))
+                        State (Return (Constant (ConstantInt "0")))
                       ]
                   )
               )
@@ -1134,7 +1134,7 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 2)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "2")))),
                         State (Return (Variable "a"))
                       ]
                   )
@@ -1154,12 +1154,12 @@ spec = do
                               ( Just
                                   ( BinaryOperator
                                       Addition
-                                      (Constant (ConstantInt 2))
-                                      (Constant (ConstantInt 2))
+                                      (Constant (ConstantInt "2"))
+                                      (Constant (ConstantInt "2"))
                                   )
                               )
                           ),
-                        State (Return (Constant (ConstantInt 0)))
+                        State (Return (Constant (ConstantInt "0")))
                       ]
                   )
               )
@@ -1174,16 +1174,16 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Expression
                               ( Just
                                   ( Assign
                                       "a"
                                       ( ConditionalExpression
-                                          (Constant (ConstantInt 1))
-                                          (Constant (ConstantInt 2))
-                                          (Constant (ConstantInt 3))
+                                          (Constant (ConstantInt "1"))
+                                          (Constant (ConstantInt "2"))
+                                          (Constant (ConstantInt "3"))
                                       )
                                   )
                               )
@@ -1202,8 +1202,8 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2))) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))))),
-                        Declaration (Declare CInt "b" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant (ConstantInt 1)) (Constant (ConstantInt 2))) (Constant (ConstantInt 5)) (Constant (ConstantInt 6))))),
+                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant (ConstantInt "1")) (Constant (ConstantInt "2"))) (Constant (ConstantInt "3")) (Constant (ConstantInt "4"))))),
+                        Declaration (Declare CInt "b" (Just (ConditionalExpression (BinaryOperator GreaterThan (Constant (ConstantInt "1")) (Constant (ConstantInt "2"))) (Constant (ConstantInt "5")) (Constant (ConstantInt "6"))))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1225,18 +1225,18 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 2)))),
-                        Declaration (Declare CInt "flag" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "1")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "2")))),
+                        Declaration (Declare CInt "flag" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Return
                               ( ConditionalExpression
                                   (BinaryOperator GreaterThan (Variable "a") (Variable "b"))
-                                  (Constant (ConstantInt 5))
+                                  (Constant (ConstantInt "5"))
                                   ( ConditionalExpression
                                       (Variable "flag")
-                                      (Constant (ConstantInt 6))
-                                      (Constant (ConstantInt 7))
+                                      (Constant (ConstantInt "6"))
+                                      (Constant (ConstantInt "7"))
                                   )
                               )
                           )
@@ -1253,8 +1253,8 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (Constant (ConstantInt 1)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
-                        Declaration (Declare CInt "b" (Just (ConditionalExpression (Constant (ConstantInt 0)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
+                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (Constant (ConstantInt "1")) (ConditionalExpression (Constant (ConstantInt "2")) (Constant (ConstantInt "3")) (Constant (ConstantInt "4"))) (Constant (ConstantInt "5"))))),
+                        Declaration (Declare CInt "b" (Just (ConditionalExpression (Constant (ConstantInt "0")) (ConditionalExpression (Constant (ConstantInt "2")) (Constant (ConstantInt "3")) (Constant (ConstantInt "4"))) (Constant (ConstantInt "5"))))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1276,8 +1276,8 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (Constant (ConstantInt 1)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
-                        Declaration (Declare CInt "b" (Just (ConditionalExpression (Constant (ConstantInt 0)) (ConditionalExpression (Constant (ConstantInt 2)) (Constant (ConstantInt 3)) (Constant (ConstantInt 4))) (Constant (ConstantInt 5))))),
+                      [ Declaration (Declare CInt "a" (Just (ConditionalExpression (Constant (ConstantInt "1")) (ConditionalExpression (Constant (ConstantInt "2")) (Constant (ConstantInt "3")) (Constant (ConstantInt "4"))) (Constant (ConstantInt "5"))))),
+                        Declaration (Declare CInt "b" (Just (ConditionalExpression (Constant (ConstantInt "0")) (ConditionalExpression (Constant (ConstantInt "2")) (Constant (ConstantInt "3")) (Constant (ConstantInt "4"))) (Constant (ConstantInt "5"))))),
                         State
                           ( Return
                               ( BinaryOperator
@@ -1299,13 +1299,13 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Return
                               ( ConditionalExpression
-                                  (BinaryOperator GreaterThan (Variable "a") (UnaryOperator Negation (Constant (ConstantInt 1))))
-                                  (Constant (ConstantInt 4))
-                                  (Constant (ConstantInt 5))
+                                  (BinaryOperator GreaterThan (Variable "a") (UnaryOperator Negation (Constant (ConstantInt "1"))))
+                                  (Constant (ConstantInt "4"))
+                                  (Constant (ConstantInt "5"))
                               )
                           )
                       ]
@@ -1321,15 +1321,15 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "1")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Expression
                               ( Just
                                   ( ConditionalExpression
                                       (Variable "a")
-                                      (Assign "b" (Constant (ConstantInt 1)))
-                                      (Assign "b" (Constant (ConstantInt 2)))
+                                      (Assign "b" (Constant (ConstantInt "1")))
+                                      (Assign "b" (Constant (ConstantInt "2")))
                                   )
                               )
                           ),
@@ -1347,15 +1347,15 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Expression
                               ( Just
                                   ( ConditionalExpression
                                       (Variable "a")
-                                      (Assign "b" (Constant (ConstantInt 1)))
-                                      (Assign "b" (Constant (ConstantInt 2)))
+                                      (Assign "b" (Constant (ConstantInt "1")))
+                                      (Assign "b" (Constant (ConstantInt "2")))
                                   )
                               )
                           ),
@@ -1373,12 +1373,12 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Return (Constant (ConstantInt 1)))
-                              (Just (Return (Constant (ConstantInt 2))))
+                              (Return (Constant (ConstantInt "1")))
+                              (Just (Return (Constant (ConstantInt "2"))))
                           )
                       ]
                   )
@@ -1393,16 +1393,16 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "1")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt "1")))))
                               ( Just
                                   ( Conditional
                                       (Variable "b")
-                                      (Expression (Just (Assign "b" (Constant (ConstantInt 2)))))
+                                      (Expression (Just (Assign "b" (Constant (ConstantInt "2")))))
                                       Nothing
                                   )
                               )
@@ -1421,16 +1421,16 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 1)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "1")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt "1")))))
                               ( Just
                                   ( Conditional
                                       (Variable "b")
-                                      (Expression (Just (Assign "b" (Constant (ConstantInt 2)))))
+                                      (Expression (Just (Assign "b" (Constant (ConstantInt "2")))))
                                       Nothing
                                   )
                               )
@@ -1449,16 +1449,16 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 1)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "1")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt "1")))))
                               ( Just
                                   ( Conditional
                                       (Variable "b")
-                                      (Expression (Just (Assign "b" (Constant (ConstantInt 2)))))
+                                      (Expression (Just (Assign "b" (Constant (ConstantInt "2")))))
                                       Nothing
                                   )
                               )
@@ -1477,14 +1477,14 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
-                              (Constant (ConstantInt 1))
+                              (Constant (ConstantInt "1"))
                               ( Conditional
-                                  (Constant (ConstantInt 2))
-                                  (Expression (Just (Assign "a" (Constant (ConstantInt 3)))))
-                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt 4))))))
+                                  (Constant (ConstantInt "2"))
+                                  (Expression (Just (Assign "a" (Constant (ConstantInt "3")))))
+                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt "4"))))))
                               )
                               Nothing
                           ),
@@ -1502,14 +1502,14 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
-                              (Constant (ConstantInt 1))
+                              (Constant (ConstantInt "1"))
                               ( Conditional
-                                  (Constant (ConstantInt 0))
-                                  (Expression (Just (Assign "a" (Constant (ConstantInt 3)))))
-                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt 4))))))
+                                  (Constant (ConstantInt "0"))
+                                  (Expression (Just (Assign "a" (Constant (ConstantInt "3")))))
+                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt "4"))))))
                               )
                               Nothing
                           ),
@@ -1527,16 +1527,16 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
-                              (Constant (ConstantInt 0))
+                              (Constant (ConstantInt "0"))
                               ( Conditional
-                                  (Constant (ConstantInt 0))
-                                  (Expression (Just (Assign "a" (Constant (ConstantInt 3)))))
-                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt 4))))))
+                                  (Constant (ConstantInt "0"))
+                                  (Expression (Just (Assign "a" (Constant (ConstantInt "3")))))
+                                  (Just (Expression (Just (Assign "a" (Constant (ConstantInt "4"))))))
                               )
-                              (Just (Expression (Just (Assign "a" (Constant (ConstantInt 1))))))
+                              (Just (Expression (Just (Assign "a" (Constant (ConstantInt "1"))))))
                           ),
                         State (Return (Variable "a"))
                       ]
@@ -1552,12 +1552,12 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt "1")))))
                               Nothing
                           ),
                         State (Return (Variable "b"))
@@ -1574,12 +1574,12 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 1)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "1")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "b" (Constant (ConstantInt 1)))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt "1")))))
                               Nothing
                           ),
                         State (Return (Variable "b"))
@@ -1596,19 +1596,19 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt 0)))),
-                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "a" (Just (Constant (ConstantInt "0")))),
+                        Declaration (Declare CInt "b" (Just (Constant (ConstantInt "0")))),
                         State
                           ( Conditional
                               (Variable "a")
-                              (Expression (Just (Assign "a" (Constant (ConstantInt 2)))))
-                              (Just (Expression (Just (Assign "a" (Constant (ConstantInt 3))))))
+                              (Expression (Just (Assign "a" (Constant (ConstantInt "2")))))
+                              (Just (Expression (Just (Assign "a" (Constant (ConstantInt "3"))))))
                           ),
                         State
                           ( Conditional
                               (Variable "b")
-                              (Expression (Just (Assign "b" (Constant (ConstantInt 4)))))
-                              (Just (Expression (Just (Assign "b" (Constant (ConstantInt 5))))))
+                              (Expression (Just (Assign "b" (Constant (ConstantInt "4")))))
+                              (Just (Expression (Just (Assign "b" (Constant (ConstantInt "5"))))))
                           ),
                         State
                           ( Return
@@ -1632,18 +1632,18 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt "0")))),
                         State
                           ( ForDecl
-                              (Declare CInt "i" (Just (Constant (ConstantInt 0))))
-                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt 10))))
+                              (Declare CInt "i" (Just (Constant (ConstantInt "0"))))
+                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt "10"))))
                               ( Just
                                   ( Assign
                                       "i"
                                       ( BinaryOperator
                                           Addition
                                           (Variable "i")
-                                          (Constant (ConstantInt 1))
+                                          (Constant (ConstantInt "1"))
                                       )
                                   )
                               )
@@ -1666,7 +1666,7 @@ spec = do
                                           ( BinaryOperator
                                               GreaterThan
                                               (Variable "sum")
-                                              (Constant (ConstantInt 10))
+                                              (Constant (ConstantInt "10"))
                                           )
                                           Break
                                           Nothing
@@ -1688,12 +1688,12 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt "0")))),
                         State
                           ( ForDecl
-                              (Declare CInt "i" (Just (Constant (ConstantInt 0))))
-                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt 10))))
-                              (Just (Assign "i" (BinaryOperator Addition (Variable "i") (Constant (ConstantInt 1)))))
+                              (Declare CInt "i" (Just (Constant (ConstantInt "0"))))
+                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt "10"))))
+                              (Just (Assign "i" (BinaryOperator Addition (Variable "i") (Constant (ConstantInt "1")))))
                               ( Compound
                                   [ State
                                       ( Conditional
@@ -1701,8 +1701,8 @@ spec = do
                                               Inequality
                                               ( BinaryOperator
                                                   Multiplication
-                                                  (BinaryOperator Division (Variable "sum") (Constant (ConstantInt 2)))
-                                                  (Constant (ConstantInt 2))
+                                                  (BinaryOperator Division (Variable "sum") (Constant (ConstantInt "2")))
+                                                  (Constant (ConstantInt "2"))
                                               )
                                               (Variable "sum")
                                           )
@@ -1739,11 +1739,11 @@ spec = do
                   "main"
                   []
                   ( Just
-                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt 0)))),
+                      [ Declaration (Declare CInt "sum" (Just (Constant (ConstantInt "0")))),
                         State
                           ( ForDecl
-                              (Declare CInt "i" (Just (Constant (ConstantInt 0))))
-                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt 10))))
+                              (Declare CInt "i" (Just (Constant (ConstantInt "0"))))
+                              (Just (BinaryOperator LessThan (Variable "i") (Constant (ConstantInt "10"))))
                               Nothing
                               ( Compound
                                   [ State
@@ -1754,14 +1754,14 @@ spec = do
                                                   ( BinaryOperator
                                                       Addition
                                                       (Variable "i")
-                                                      (Constant (ConstantInt 1))
+                                                      (Constant (ConstantInt "1"))
                                                   )
                                               )
                                           )
                                       ),
                                     State
                                       ( Conditional
-                                          ( BinaryOperator Equality (Variable "i") (Constant (ConstantInt 2))
+                                          ( BinaryOperator Equality (Variable "i") (Constant (ConstantInt "2"))
                                           )
                                           Continue
                                           Nothing

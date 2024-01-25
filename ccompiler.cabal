@@ -26,9 +26,9 @@ source-repository head
 library
   exposed-modules:
       Generator
-      LexerCombinator
+      Lexer
       Parsec
-      ParserCombinator
+      Parser
       Compiler
   other-modules:
       Paths_ccompiler
@@ -56,8 +56,8 @@ test-suite ccompiler-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      LexerCombinatorSpec
-      ParserCombinatorSpec
+      LexerSpec
+      ParserSpec
       Paths_ccompiler
   hs-source-dirs:
       test

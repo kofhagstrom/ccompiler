@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module ParserCombinator
+module Parser
   ( Parser (..),
     program,
     Program (..),
@@ -27,7 +27,7 @@ import Control.Applicative
   )
 import Data.Functor (($>))
 import Data.Maybe (maybeToList)
-import LexerCombinator
+import Lexer
   ( Keyword
       ( BreakKW,
         ContinueKW,

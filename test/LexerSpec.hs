@@ -1,6 +1,6 @@
-module LexerCombinatorSpec (spec) where
+module LexerSpec (spec) where
 
-import LexerCombinator
+import Lexer
 import Parsec
 import Test.Hspec
 

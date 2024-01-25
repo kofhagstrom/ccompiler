@@ -1,4 +1,4 @@
-module LexerCombinator
+module Lexer
   ( Keyword (..),
     Token (..),
     Literal (..),

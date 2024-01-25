@@ -1,8 +1,8 @@
-module ParserCombinatorSpec (spec) where
+module ParserSpec (spec) where
 
 import Data.List (intercalate)
-import LexerCombinator
-import ParserCombinator
+import Lexer
+import Parser
 import Test.Hspec
 
 parseHelper :: String -> Program

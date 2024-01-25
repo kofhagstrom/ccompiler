@@ -1,7 +1,7 @@
 module Compiler (runLexer, runParser) where
 
-import LexerCombinator
-import ParserCombinator
+import Lexer
+import Parser
 
 runLexer :: String -> IO ()
 runLexer fileContents = case run tokens fileContents of

@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 
-module Parser
+module Parsec
   ( Parser (..),
     ParseError (..),
     parseWhile,

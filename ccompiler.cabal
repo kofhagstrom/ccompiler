@@ -27,7 +27,7 @@ library
   exposed-modules:
       Generator
       LexerCombinator
-      Parser
+      Parsec
       ParserCombinator
       Compiler
   other-modules:

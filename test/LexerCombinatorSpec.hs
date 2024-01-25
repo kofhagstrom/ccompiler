@@ -1,7 +1,7 @@
 module LexerCombinatorSpec (spec) where
 
 import LexerCombinator
-import Parser
+import Parsec
 import Test.Hspec
 
 lexHelper :: String -> [Token]

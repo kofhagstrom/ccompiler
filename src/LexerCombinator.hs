@@ -12,7 +12,7 @@ module LexerCombinator
 where
 
 import Control.Applicative (Alternative (empty, (<|>)), many)
-import Parser (Parser, ignore, manyOf, noneOf, orElse, parse, parseWhile, skip)
+import Parsec (Parser, ignore, manyOf, noneOf, orElse, parse, parseWhile, skip)
 
 data Token
   = OpenBraceT

@@ -47,7 +47,7 @@ import LexerCombinator
       ),
     Token (..),
   )
-import Parser (ParseError (..), Parser (..), loop, oneOf, parseC)
+import Parsec (ParseError (..), Parser (..), loop, oneOf, parseC)
 
 type ASTParser a = Parser [Token] a
 

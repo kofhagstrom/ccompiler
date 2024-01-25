@@ -1,3 +1,5 @@
+{-# LANGUAGE LambdaCase #-}
+
 module Parser
   ( Parser (..),
     ParseError (..),
@@ -10,6 +12,8 @@ module Parser
     parseC,
     orElse,
     manyOf,
+    next,
+    loop
   )
 where
 
@@ -20,7 +24,7 @@ import Prelude hiding (all)
 instance Show ParseError where
   show (UnexpectedError msg) = msg ++ "\n"
 
-data ParseError = UnexpectedError String
+newtype ParseError = UnexpectedError String
 
 newtype Parser i o = Parser {run :: i -> Either ([ParseError], i) (o, i)}
 
@@ -99,3 +103,21 @@ ignore p = p $> ()
 
 orElse :: Alternative t => t a -> t a -> t a
 orElse = (<|>)
+
+next :: Parser [o] o
+next = Parser $ \case
+  (t : ts) -> Right (t, ts)
+  [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
+
+-- parses a grammar of type <A> ::= <B> { ("a" | "b" | ... ) <B> }
+-- parserB is a parser which parses Bs, and tokenToOperator is a function which matches tokens to operators
+loop :: Parser [t1] t2 -> (t1 -> t2 -> t2 -> Maybe t2) -> Parser [t1] t2
+loop parserB tokenToOperator = parserB >>= loop'
+  where
+    loop' e =
+      ( do
+          t <- next
+          p <- parserB
+          maybe empty loop' (tokenToOperator t e p)
+      )
+        `orElse` return e

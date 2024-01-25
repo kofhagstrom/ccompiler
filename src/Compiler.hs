@@ -13,5 +13,5 @@ runLexer fileContents = case run tokens fileContents of
 runParser :: String -> IO ()
 runParser = either except handleParse . run tokens
   where
-    handleParse (out, _) = either except (print . fst) . run parseProgram $ out
+    handleParse (out, _) = either except (print . fst) . run program $ out
     except es = error $ concatMap show es

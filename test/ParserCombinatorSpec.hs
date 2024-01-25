@@ -7,7 +7,7 @@ import Test.Hspec
 
 parseHelper :: String -> Program
 parseHelper string = case run tokens string of
-  Right (tokens, _) -> case run parseProgram tokens of
+  Right (tokens', _) -> case run program tokens' of
     Right (ast, _) -> ast
     Left (es, ts) -> error (except es ++ "Remaining tokens: " ++ intercalate ", " (show <$> ts))
   Left (e, _) -> error (except e)

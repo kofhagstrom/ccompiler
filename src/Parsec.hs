@@ -13,7 +13,7 @@ module Parsec
     orElse,
     manyOf,
     next,
-    loop
+    loop,
   )
 where
 
@@ -64,10 +64,6 @@ parseC p = Parser f
         else Left ([UnexpectedError ""], all)
     f [] = Left ([UnexpectedError ""], [])
 
-contains :: Eq t => [t] -> t -> Bool
-contains [] _ = False
-contains (x' : xs) x = (x == x') || xs `contains` x
-
 of_ :: (b -> ([a], b)) -> Parser b [a]
 of_ f =
   Parser $ \input -> case f input of
@@ -78,14 +74,14 @@ oneOf :: Eq a => [a] -> Parser [a] [a]
 oneOf options = of_ f
   where
     f input = case input of
-      (x : xs) -> if options `contains` x then ([x], xs) else ([], input)
+      (x : xs) -> if x `elem` options then ([x], xs) else ([], input)
       [] -> ([], [])
 
 manyOf :: Eq a => [a] -> Parser [a] [a]
-manyOf options = of_ (span (options `contains`))
+manyOf options = of_ . span $ (`elem` options)
 
 noneOf :: Eq t => [t] -> Parser [t] [t]
-noneOf options = of_ (break (options `contains`))
+noneOf options = of_ . break $ (`elem`  options)
 
 parseWhile :: (a -> Bool) -> Parser [a] [a]
 parseWhile f = Parser $ \input ->
@@ -110,14 +106,14 @@ next = Parser $ \case
   [] -> Left ([UnexpectedError "Expected something, got nothing."], [])
 
 -- parses a grammar of type <A> ::= <B> { ("a" | "b" | ... ) <B> }
--- parserB is a parser which parses Bs, and tokenToOperator is a function which matches tokens to operators
-loop :: Parser [t1] t2 -> (t1 -> t2 -> t2 -> Maybe t2) -> Parser [t1] t2
-loop parserB tokenToOperator = parserB >>= loop'
+-- parserB is a parser which parses Bs, and tokensToOutput is a function which matches input tokens to corresponding outputs
+loop :: (t1 -> t2 -> t2 -> Maybe t2) -> Parser [t1] t2 -> Parser [t1] t2
+loop tokensToOutput parserB = parserB >>= loop'
   where
     loop' e =
       ( do
           t <- next
           p <- parserB
-          maybe empty loop' (tokenToOperator t e p)
+          maybe empty loop' (tokensToOutput t e p)
       )
         `orElse` return e

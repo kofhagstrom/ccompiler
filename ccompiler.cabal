@@ -30,6 +30,8 @@ library
       Parsec
       Parser
       Compiler
+      Interpreter
+      StateM
   other-modules:
       Paths_ccompiler
   hs-source-dirs:

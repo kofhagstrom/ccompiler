@@ -47,7 +47,7 @@ import Lexer
       ),
     Token (..),
   )
-import Parsec (ParseError (..), Parser (..), loop, oneOf, parseC)
+import Parsec (ParseError (..), Parser (..), loop, oneOf, parseC, skip)
 
 type ASTParser a = Parser [Token] a
 
@@ -238,12 +238,11 @@ expression =
 conditionalExpression :: ASTParser Expression
 conditionalExpression =
   ( do
-      (logicalOrExpr, expr, condExpr) <-
-        (,,)
-          <$> (logicalOrExpression <* tokens [QuestionMarkT])
-          <*> (expression <* tokens [ColonT])
-          <*> conditionalExpression
-      return (ConditionalExpression logicalOrExpr expr condExpr)
+      loe <- logicalOrExpression
+      skip [QuestionMarkT]
+      e <- expression
+      skip [ColonT]
+      ConditionalExpression loe e <$> conditionalExpression
   )
     <|> logicalOrExpression
 
@@ -251,41 +250,40 @@ conditionalExpression =
 logicalOrExpression :: ASTParser Expression
 logicalOrExpression =
   loop
-    logicalAndExpression
     ( \t e1 e2 ->
         case t of
           OrT -> Just (BinaryOperator LogicalOr e1 e2)
           _ -> Nothing
     )
+    logicalAndExpression
 
 -- <logical-and-exp> ::= <equality-exp> { "&&" <equality-exp> }
 logicalAndExpression :: ASTParser Expression
 logicalAndExpression =
   loop
-    equalityExpression
     ( \t e1 e2 ->
         case t of
           AndT -> Just (BinaryOperator LogicalAnd e1 e2)
           _ -> Nothing
     )
+    equalityExpression
 
 -- <equality-exp> ::= <relational-exp> { ("!=" | "==") <relational-exp> }
 equalityExpression :: ASTParser Expression
 equalityExpression =
   loop
-    relationalExpression
     ( \t e1 e2 ->
         case t of
           NotEqualT -> Just (BinaryOperator Inequality e1 e2)
           LogicalEqualityT -> Just (BinaryOperator Equality e1 e2)
           _ -> Nothing
     )
+    relationalExpression
 
 -- <relational-exp> ::= <additive-exp> { ("<" | ">" | "<=" | ">=") <additive-exp> }
 relationalExpression :: ASTParser Expression
 relationalExpression =
   loop
-    additiveExpression
     ( \t e1 e2 ->
         case t of
           LessThanT -> Just (BinaryOperator LessThan e1 e2)
@@ -294,30 +292,31 @@ relationalExpression =
           GreaterThanOrEqualT -> Just (BinaryOperator GreaterThanOrEqual e1 e2)
           _ -> Nothing
     )
+    additiveExpression
 
 -- <additive-exp> ::= <term> { ("+" | "-") <term> }
 additiveExpression :: ASTParser Expression
 additiveExpression =
   loop
-    term
     ( \t e1 e2 ->
         case t of
           PlusT -> Just (BinaryOperator Addition e1 e2)
           MinusT -> Just (BinaryOperator Subtraction e1 e2)
           _ -> Nothing
     )
+    term
 
 -- <term> ::= <factor> { ("*" | "/") <factor> }
 term :: ASTParser Expression
 term =
   loop
-    factor
     ( \t e1 e2 ->
         case t of
           AsteriskT -> Just (BinaryOperator Multiplication e1 e2)
           DivisionT -> Just (BinaryOperator Division e1 e2)
           _ -> Nothing
     )
+    factor
 
 -- <factor> ::= <function-call> | "(" <exp> ")" | <unary_op> <factor> | <int> | <string> | <bool> | <id>
 factor :: ASTParser Expression
@@ -339,7 +338,11 @@ functionCall :: ASTParser Expression
 functionCall = do
   identifier <- identifierLiteral <* tokens [OpenParenthesisT]
   firstArg <- optional expression
-  args <- many (tokens [CommaT] *> expression)
+  args <-
+    many
+      ( do
+          tokens [CommaT] *> expression
+      )
   tokens [CloseParenthesisT] $> FunCall identifier (maybeToList firstArg ++ args)
 
 constant :: ASTParser Constant

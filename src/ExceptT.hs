@@ -1,5 +1,3 @@
-{-# LANGUAGE InstanceSigs #-}
-
 module ExceptT (ExceptT (..), throwError, lift) where
 
 newtype ExceptT e m a = ExceptT {runExceptT :: m (Either e a)}

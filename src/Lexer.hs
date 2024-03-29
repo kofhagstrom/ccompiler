@@ -159,13 +159,13 @@ token =
       ignore $ newLine <|> comment <|> multilineComment
       token
   )
-    <|> ( do
-            ignore whitespace
-            output <- nonLiteral
-            ignore whitespace
-            return output
-        )
-    <|> literal
+    `orElse` ( do
+                 ignore whitespace
+                 output <- nonLiteral
+                 ignore whitespace
+                 return output
+             )
+    `orElse` literal
 
 tokens :: Lexer [Token]
 tokens = many token
